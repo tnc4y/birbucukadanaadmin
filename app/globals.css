@@ -119,6 +119,36 @@ button:disabled {
   gap: 16px;
 }
 
+.dashboard-shell {
+  grid-template-columns: 280px minmax(0, 1fr);
+  align-items: start;
+}
+
+.dashboard-shell .hero {
+  grid-column: 1 / -1;
+}
+
+.side-menu {
+  position: sticky;
+  top: 16px;
+}
+
+.menu-list {
+  display: grid;
+  gap: 8px;
+}
+
+.menu-list button {
+  text-align: left;
+  background: #f2f5ff;
+  color: #13295a;
+}
+
+.content-area {
+  display: grid;
+  gap: 14px;
+}
+
 .panel {
   display: grid;
   gap: 8px;
@@ -164,6 +194,26 @@ button:disabled {
   gap: 6px;
   max-height: 58vh;
   overflow: auto;
+}
+
+.log-list {
+  display: grid;
+  gap: 8px;
+  max-height: 340px;
+  overflow: auto;
+}
+
+.log-item {
+  display: grid;
+  gap: 4px;
+  background: #f6f8ff;
+  border: 1px solid #dce3f5;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.log-item small {
+  color: #4f5f88;
 }
 
 .list button {
@@ -239,7 +289,46 @@ button:disabled {
   margin-bottom: 12px;
 }
 
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stats-grid.compact {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.stat-card {
+  min-height: 102px;
+  align-content: space-between;
+}
+
+.stat-value {
+  font-size: 26px;
+  color: #0f2350;
+}
+
+.stat-mini {
+  background: #f6f8ff;
+  border: 1px solid #dce3f5;
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
 @media (max-width: 900px) {
+  .dashboard-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .side-menu {
+    position: static;
+  }
+
   .layout-2 {
     grid-template-columns: 1fr;
   }
@@ -250,5 +339,10 @@ button:disabled {
 
   .span-2 {
     grid-column: span 1;
+  }
+
+  .stats-grid,
+  .stats-grid.compact {
+    grid-template-columns: 1fr;
   }
 }

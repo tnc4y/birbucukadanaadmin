@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
+import { auth } from '@/lib/firebase';
 import { getSettings, upsertSettings } from '@/lib/firestore-admin';
 
 export function SettingsEditor() {
@@ -15,6 +16,7 @@ export function SettingsEditor() {
     socialLinksText: '',
   });
   const [status, setStatus] = useState('');
+  const [originalData, setOriginalData] = useState(null);
 
   function toText(links) {
     if (!Array.isArray(links) || links.length === 0) return '';
@@ -41,6 +43,7 @@ export function SettingsEditor() {
 
   async function refresh() {
     const data = await getSettings();
+    setOriginalData(data);
     setForm({
       appName: data.appName ?? '',
       aboutTitle: data.aboutTitle ?? '',
@@ -59,6 +62,21 @@ export function SettingsEditor() {
 
   async function save() {
     await upsertSettings({
+      appName: form.appName,
+      aboutTitle: form.aboutTitle,
+      aboutContent: form.aboutContent,
+      contactEmail: form.contactEmail,
+      contactPhone: form.contactPhone,
+      contactAddress: form.contactAddress,
+      socialLinks: fromText(form.socialLinksText),
+    }, {
+      actor: {
+        uid: auth.currentUser?.uid ?? '',
+        email: auth.currentUser?.email ?? '',
+      },
+      beforeData: originalData,
+    });
+    setOriginalData({
       appName: form.appName,
       aboutTitle: form.aboutTitle,
       aboutContent: form.aboutContent,

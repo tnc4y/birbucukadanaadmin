@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 
 import { COLLECTION_LABELS } from '@/lib/collections';
+import { auth } from '@/lib/firebase';
 import {
   listCollection,
   removeCollectionDoc,
@@ -151,6 +152,14 @@ export function CollectionEditor({ collection }) {
   const [uploadingField, setUploadingField] = useState('');
   const fields = SCHEMA[collection] ?? [];
 
+  function actorInfo() {
+    const user = auth.currentUser;
+    return {
+      uid: user?.uid ?? '',
+      email: user?.email ?? '',
+    };
+  }
+
   function isUploadableField(fieldKey) {
     return ['imageUrl', 'logoUrl', 'bannerUrl', 'mediaUrl'].includes(fieldKey);
   }
@@ -230,7 +239,11 @@ export function CollectionEditor({ collection }) {
   async function saveSelected() {
     if (!selectedId) return;
 
-    await upsertCollectionDoc(collection, selectedId, fromForm(collection, form));
+    const existing = items.find((item) => item.id === selectedId)?.data ?? null;
+    await upsertCollectionDoc(collection, selectedId, fromForm(collection, form), {
+      actor: actorInfo(),
+      beforeData: existing,
+    });
     setStatus('Kaydedildi.');
     await refresh();
   }
@@ -242,7 +255,10 @@ export function CollectionEditor({ collection }) {
     }
 
     const id = newId.trim();
-    await upsertCollectionDoc(collection, id, fromForm(collection, form));
+    await upsertCollectionDoc(collection, id, fromForm(collection, form), {
+      actor: actorInfo(),
+      beforeData: null,
+    });
     setSelectedId(id);
     setStatus('Yeni kayit olusturuldu.');
     setNewId('');
@@ -251,7 +267,11 @@ export function CollectionEditor({ collection }) {
 
   async function deleteSelected() {
     if (!selectedId) return;
-    await removeCollectionDoc(collection, selectedId);
+    const existing = items.find((item) => item.id === selectedId)?.data ?? null;
+    await removeCollectionDoc(collection, selectedId, {
+      actor: actorInfo(),
+      beforeData: existing,
+    });
     setStatus('Silindi.');
     setSelectedId('');
     setForm({});
