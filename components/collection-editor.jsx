@@ -147,7 +147,13 @@ export function CollectionEditor({ collection }) {
   const [newId, setNewId] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
+  const [uploadFiles, setUploadFiles] = useState({});
+  const [uploadingField, setUploadingField] = useState('');
   const fields = SCHEMA[collection] ?? [];
+
+  function isUploadableField(fieldKey) {
+    return ['imageUrl', 'logoUrl', 'bannerUrl', 'mediaUrl'].includes(fieldKey);
+  }
 
   async function refresh() {
     const result = await listCollection(collection);
@@ -178,6 +184,41 @@ export function CollectionEditor({ collection }) {
 
   function updateField(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function uploadForField(fieldKey) {
+    const file = uploadFiles[fieldKey];
+    if (!file) {
+      setStatus('Once bir dosya secin.');
+      return;
+    }
+
+    setUploadingField(fieldKey);
+    setStatus('Dosya yukleniyor...');
+
+    try {
+      const body = new FormData();
+      body.append('file', file);
+      body.append('folder', `birbucukadana/${collection}`);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body,
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result?.error || 'Yukleme basarisiz.');
+      }
+
+      updateField(fieldKey, result.secureUrl);
+      setUploadFiles((prev) => ({ ...prev, [fieldKey]: null }));
+      setStatus('Dosya yuklendi ve URL otomatik dolduruldu.');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Yukleme basarisiz.');
+    } finally {
+      setUploadingField('');
+    }
   }
 
   function createFromTitle() {
@@ -306,6 +347,37 @@ export function CollectionEditor({ collection }) {
                       rows={4}
                       placeholder="Instagram|https://instagram.com/...|true"
                     />
+                  </label>
+                );
+              }
+
+              if (isUploadableField(field.key)) {
+                return (
+                  <label key={field.key} className="span-2 upload-box">
+                    {field.label}
+                    <input
+                      type="text"
+                      value={value ?? ''}
+                      onChange={(e) => updateField(field.key, e.target.value)}
+                      placeholder="Yukledikten sonra URL otomatik gelir (manuel de yazabilirsiniz)"
+                    />
+                    <div className="upload-row">
+                      <input
+                        type="file"
+                        accept=".svg,image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] ?? null;
+                          setUploadFiles((prev) => ({ ...prev, [field.key]: file }));
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => uploadForField(field.key)}
+                        disabled={!uploadFiles[field.key] || uploadingField === field.key}
+                      >
+                        {uploadingField === field.key ? 'Yukleniyor...' : 'Dosya Yukle'}
+                      </button>
+                    </div>
                   </label>
                 );
               }

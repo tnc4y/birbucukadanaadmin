@@ -143,6 +143,22 @@ button:disabled {
   align-items: center;
 }
 
+.upload-box {
+  display: grid;
+  gap: 8px;
+}
+
+.upload-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.upload-row input[type='file'] {
+  max-width: 100%;
+}
+
 .list {
   display: grid;
   gap: 6px;
