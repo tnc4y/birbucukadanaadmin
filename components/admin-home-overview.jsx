@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import { COLLECTIONS, COLLECTION_LABELS } from '@/lib/collections';
+import { getAnalyticsSummary } from '@/lib/analytics-api';
 import { getSettings, listAuditLogs, listCollection } from '@/lib/firestore-admin';
 
 function formatDate(value) {
@@ -20,6 +21,12 @@ export function AdminHomeOverview() {
     appName: '-',
     auditCount: 0,
     lastAudit: null,
+    onlineUsers: 0,
+    topTeams: [],
+    topAnnouncements: [],
+    topAwards: [],
+    topProjects: [],
+    totalViews: {},
   });
 
   async function refresh() {
@@ -27,9 +34,10 @@ export function AdminHomeOverview() {
     setError('');
 
     try {
-      const [settings, logs, ...collectionResults] = await Promise.all([
+      const [settings, logs, analytics, ...collectionResults] = await Promise.all([
         getSettings(),
         listAuditLogs(100),
+        getAnalyticsSummary(),
         ...COLLECTIONS.map((name) => listCollection(name)),
       ]);
 
@@ -51,6 +59,12 @@ export function AdminHomeOverview() {
         appName: settings?.appName || '1.5 Adana',
         auditCount: logs.length,
         lastAudit: logs[0]?.data ?? null,
+        onlineUsers: analytics?.onlineUsers || 0,
+        topTeams: analytics?.topTeams || [],
+        topAnnouncements: analytics?.topAnnouncements || [],
+        topAwards: analytics?.topAwards || [],
+        topProjects: analytics?.topProjects || [],
+        totalViews: analytics?.totalViews || {},
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'İstatistikler alınamadı.');
@@ -68,7 +82,7 @@ export function AdminHomeOverview() {
       { label: 'Toplam İçerik Kaydı', value: stats.totalDocs },
       { label: 'Aktif Kayıt Sayısı', value: stats.visibleDocs },
       { label: 'Toplam İşlem Logu', value: stats.auditCount },
-      { label: 'Uygulama Adı', value: stats.appName },
+      { label: 'Online Kullanıcılar', value: stats.onlineUsers },
     ],
     [stats]
   );
@@ -106,6 +120,84 @@ export function AdminHomeOverview() {
           ))}
         </div>
       </section>
+
+      <section className="card">
+        <h3>Görüntüleme İstatistikleri</h3>
+        <div className="stats-grid compact">
+          <div className="stat-mini">
+            <span>Toplam Takım Görüntülemeleri</span>
+            <strong>{stats.totalViews?.teams || 0}</strong>
+          </div>
+          <div className="stat-mini">
+            <span>Toplam Duyuru Görüntülemeleri</span>
+            <strong>{stats.totalViews?.announcements || 0}</strong>
+          </div>
+          <div className="stat-mini">
+            <span>Toplam Ödül Görüntülemeleri</span>
+            <strong>{stats.totalViews?.awards || 0}</strong>
+          </div>
+          <div className="stat-mini">
+            <span>Toplam Proje Görüntülemeleri</span>
+            <strong>{stats.totalViews?.projects || 0}</strong>
+          </div>
+        </div>
+      </section>
+
+      {stats.topTeams.length > 0 && (
+        <section className="card">
+          <h3>En Çok Görüntülenen Takımlar</h3>
+          <div className="list">
+            {stats.topTeams.map((team) => (
+              <div key={team.teamId} className="list-item">
+                <strong>{team.teamId}</strong>
+                <span>{team.viewCount} görüntüleme</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {stats.topAnnouncements.length > 0 && (
+        <section className="card">
+          <h3>En Çok Görüntülenen Duyurular</h3>
+          <div className="list">
+            {stats.topAnnouncements.map((announcement) => (
+              <div key={announcement.announcementId} className="list-item">
+                <strong>{announcement.announcementId}</strong>
+                <span>{announcement.viewCount} görüntüleme</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {stats.topAwards.length > 0 && (
+        <section className="card">
+          <h3>En Çok Görüntülenen Ödüller</h3>
+          <div className="list">
+            {stats.topAwards.map((award) => (
+              <div key={award.awardId} className="list-item">
+                <strong>{award.awardId}</strong>
+                <span>{award.viewCount} görüntüleme</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {stats.topProjects.length > 0 && (
+        <section className="card">
+          <h3>En Çok Görüntülenen Projeler</h3>
+          <div className="list">
+            {stats.topProjects.map((project) => (
+              <div key={project.projectId} className="list-item">
+                <strong>{project.projectId}</strong>
+                <span>{project.viewCount} görüntüleme</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="card">
         <h3>Son İşlem</h3>
