@@ -53,7 +53,7 @@ export function AdminHomeOverview() {
         lastAudit: logs[0]?.data ?? null,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Istatistikler alinamadi.');
+      setError(err instanceof Error ? err.message : 'İstatistikler alınamadı.');
     } finally {
       setLoading(false);
     }
@@ -65,10 +65,10 @@ export function AdminHomeOverview() {
 
   const cards = useMemo(
     () => [
-      { label: 'Toplam Icerik Kaydi', value: stats.totalDocs },
-      { label: 'Aktif Kayit Sayisi', value: stats.visibleDocs },
-      { label: 'Toplam Islem Logu', value: stats.auditCount },
-      { label: 'Uygulama Adi', value: stats.appName },
+      { label: 'Toplam İçerik Kaydı', value: stats.totalDocs },
+      { label: 'Aktif Kayıt Sayısı', value: stats.visibleDocs },
+      { label: 'Toplam İşlem Logu', value: stats.auditCount },
+      { label: 'Uygulama Adı', value: stats.appName },
     ],
     [stats]
   );
@@ -78,12 +78,12 @@ export function AdminHomeOverview() {
       <div className="actions">
         <h2>Ana Sayfa</h2>
         <button type="button" onClick={refresh}>
-          Istatistikleri Yenile
+          İstatistikleri Yenile
         </button>
       </div>
       <p className="muted">Panelin genel durumunu buradan takip edebilirsiniz.</p>
 
-      {loading ? <p className="muted">Istatistikler yukleniyor...</p> : null}
+      {loading ? <p className="muted">İstatistikler yükleniyor...</p> : null}
       {error ? <p className="error">{error}</p> : null}
 
       <div className="stats-grid">
@@ -96,7 +96,7 @@ export function AdminHomeOverview() {
       </div>
 
       <section className="card">
-        <h3>Koleksiyon Dagilimi</h3>
+        <h3>Koleksiyon Dağılımı</h3>
         <div className="stats-grid compact">
           {COLLECTIONS.map((name) => (
             <div key={name} className="stat-mini">
@@ -108,7 +108,7 @@ export function AdminHomeOverview() {
       </section>
 
       <section className="card">
-        <h3>Son Islem</h3>
+        <h3>Son İşlem</h3>
         {stats.lastAudit ? (
           <>
             <p>
@@ -120,7 +120,7 @@ export function AdminHomeOverview() {
             </p>
           </>
         ) : (
-          <p className="muted">Henuz kayitli bir islem yok.</p>
+          <p className="muted">Henüz kayıtlı bir işlem yok.</p>
         )}
       </section>
     </section>

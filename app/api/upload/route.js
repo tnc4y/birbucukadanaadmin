@@ -7,7 +7,7 @@ export async function POST(request) {
     if (!privateKey) {
       return Response.json(
         {
-          error: 'Sunucu yukleme ayarlari eksik. IMAGEKIT_PRIVATE_KEY tanimlayin.',
+          error: 'Sunucu yükleme ayarları eksik. IMAGEKIT_PRIVATE_KEY tanımlayın.',
         },
         { status: 500 }
       );
@@ -17,7 +17,7 @@ export async function POST(request) {
     const file = data.get('file');
 
     if (!file || typeof file === 'string') {
-      return Response.json({ error: 'Yuklenecek dosya bulunamadi.' }, { status: 400 });
+      return Response.json({ error: 'Yüklenecek dosya bulunamadı.' }, { status: 400 });
     }
 
     const folder = (data.get('folder') || 'birbucukadana').toString();
@@ -45,7 +45,7 @@ export async function POST(request) {
     if (!response.ok) {
       return Response.json(
         {
-          error: result?.message || 'Yukleme sirasinda bir hata olustu.',
+          error: result?.message || 'Yükleme sırasında bir hata oluştu.',
         },
         { status: 400 }
       );
@@ -57,6 +57,6 @@ export async function POST(request) {
       format: result.format,
     });
   } catch {
-    return Response.json({ error: 'Beklenmeyen bir hata olustu.' }, { status: 500 });
+    return Response.json({ error: 'Beklenmeyen bir hata oluştu.' }, { status: 500 });
   }
 }

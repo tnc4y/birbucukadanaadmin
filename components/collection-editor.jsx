@@ -12,67 +12,67 @@ import {
 
 const SCHEMA = {
   announcements: [
-    { key: 'title', label: 'Baslik' },
-    { key: 'summary', label: 'Kisa Aciklama' },
+    { key: 'title', label: 'Başlık' },
+    { key: 'summary', label: 'Kısa Açıklama' },
     { key: 'content', label: 'Detay Metni', type: 'textarea' },
-    { key: 'imageUrl', label: 'Gorsel URL' },
-    { key: 'order', label: 'Siralama', type: 'number' },
-    { key: 'buttonText', label: 'Buton Yazisi' },
+    { key: 'imageUrl', label: 'Görsel URL' },
+    { key: 'order', label: 'Sıralama', type: 'number' },
+    { key: 'buttonText', label: 'Buton Yazısı' },
     { key: 'buttonUrl', label: 'Buton Linki' },
-    { key: 'popupDismissKey', label: 'Popup Anahtari' },
+    { key: 'popupDismissKey', label: 'Popup Anahtarı' },
     { key: 'visible', label: 'Aktif', type: 'boolean' },
-    { key: 'isImportant', label: 'Onemli Duyuru', type: 'boolean' },
-    { key: 'showAsPopup', label: 'Acilista Popup Goster', type: 'boolean' },
+    { key: 'isImportant', label: 'Önemli Duyuru', type: 'boolean' },
+    { key: 'showAsPopup', label: 'Açılışta Popup Göster', type: 'boolean' },
   ],
   teams: [
-    { key: 'name', label: 'Takim Adi' },
+    { key: 'name', label: 'Takım Adı' },
     { key: 'logoUrl', label: 'Logo URL' },
-    { key: 'shortDescription', label: 'Kisa Aciklama' },
-    { key: 'description', label: 'Detay Aciklama', type: 'textarea' },
+    { key: 'shortDescription', label: 'Kısa Açıklama' },
+    { key: 'description', label: 'Detay Açıklama', type: 'textarea' },
     { key: 'bannerUrl', label: 'Banner URL' },
-    { key: 'homeOrder', label: 'Anasayfa Sirasi', type: 'number' },
+    { key: 'homeOrder', label: 'Anasayfa Sırası', type: 'number' },
     { key: 'socialLinksText', label: 'Sosyal Linkler', type: 'socialLinks' },
     { key: 'visible', label: 'Aktif', type: 'boolean' },
   ],
   events: [
-    { key: 'title', label: 'Etkinlik Basligi' },
-    { key: 'description', label: 'Aciklama', type: 'textarea' },
-    { key: 'tag', label: 'Etiket (Genel / Takim)' },
+    { key: 'title', label: 'Etkinlik Başlığı' },
+    { key: 'description', label: 'Açıklama', type: 'textarea' },
+    { key: 'tag', label: 'Etiket (Genel / Takım)' },
     { key: 'date', label: 'Tarih (YYYY-MM-DD)', type: 'date' },
-    { key: 'imageUrl', label: 'Gorsel URL' },
-    { key: 'teamId', label: 'Takim ID (opsiyonel)' },
+    { key: 'imageUrl', label: 'Görsel URL' },
+    { key: 'teamId', label: 'Takım ID (opsiyonel)' },
     { key: 'visible', label: 'Aktif', type: 'boolean' },
   ],
   sponsors: [
-    { key: 'name', label: 'Sponsor Adi' },
+    { key: 'name', label: 'Sponsor Adı' },
     { key: 'logoUrl', label: 'Logo URL' },
     { key: 'website', label: 'Website' },
-    { key: 'description', label: 'Aciklama' },
-    { key: 'teamId', label: 'Takim ID (bos ise genel sponsor)' },
+    { key: 'description', label: 'Açıklama' },
+    { key: 'teamId', label: 'Takım ID (boş ise genel sponsor)' },
     { key: 'visible', label: 'Aktif', type: 'boolean' },
   ],
   competitions: [
-    { key: 'title', label: 'Yarisma Adi' },
+    { key: 'title', label: 'Yarışma Adı' },
     { key: 'performance', label: 'Performans' },
-    { key: 'year', label: 'Yil' },
-    { key: 'teamId', label: 'Takim ID (opsiyonel)' },
-    { key: 'imageUrl', label: 'Gorsel URL' },
+    { key: 'year', label: 'Yıl' },
+    { key: 'teamId', label: 'Takım ID (opsiyonel)' },
+    { key: 'imageUrl', label: 'Görsel URL' },
     { key: 'visible', label: 'Aktif', type: 'boolean' },
   ],
   awards: [
-    { key: 'title', label: 'Odul Adi' },
-    { key: 'description', label: 'Aciklama', type: 'textarea' },
-    { key: 'projectName', label: 'Hangi Projeden Alindi' },
-    { key: 'teamId', label: 'Takim ID (opsiyonel)' },
-    { key: 'mediaUrl', label: 'Gorsel/Medya URL' },
-    { key: 'year', label: 'Yil' },
+    { key: 'title', label: 'Ödül Adı' },
+    { key: 'description', label: 'Açıklama', type: 'textarea' },
+    { key: 'projectName', label: 'Hangi Projeden Alındı' },
+    { key: 'teamId', label: 'Takım ID (opsiyonel)' },
+    { key: 'mediaUrl', label: 'Görsel/Medya URL' },
+    { key: 'year', label: 'Yıl' },
     { key: 'visible', label: 'Aktif', type: 'boolean' },
   ],
   projects: [
-    { key: 'title', label: 'Proje Adi' },
-    { key: 'description', label: 'Aciklama', type: 'textarea' },
-    { key: 'teamId', label: 'Takim ID' },
-    { key: 'mediaUrl', label: 'Gorsel URL' },
+    { key: 'title', label: 'Proje Adı' },
+    { key: 'description', label: 'Açıklama', type: 'textarea' },
+    { key: 'teamId', label: 'Takım ID' },
+    { key: 'mediaUrl', label: 'Görsel URL' },
     { key: 'repoUrl', label: 'Repo/Website Linki' },
     { key: 'visible', label: 'Aktif', type: 'boolean' },
   ],
@@ -198,12 +198,12 @@ export function CollectionEditor({ collection }) {
   async function uploadForField(fieldKey) {
     const file = uploadFiles[fieldKey];
     if (!file) {
-      setStatus('Once bir dosya secin.');
+      setStatus('Önce bir dosya seçin.');
       return;
     }
 
     setUploadingField(fieldKey);
-    setStatus('Dosya yukleniyor...');
+    setStatus('Dosya yükleniyor...');
 
     try {
       const body = new FormData();
@@ -217,14 +217,14 @@ export function CollectionEditor({ collection }) {
 
       const result = await response.json();
       if (!response.ok) {
-        throw new Error(result?.error || 'Yukleme basarisiz.');
+        throw new Error(result?.error || 'Yükleme başarısız.');
       }
 
       updateField(fieldKey, result.secureUrl);
       setUploadFiles((prev) => ({ ...prev, [fieldKey]: null }));
-      setStatus('Dosya yuklendi ve URL otomatik dolduruldu.');
+      setStatus('Dosya yüklendi ve URL otomatik dolduruldu.');
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Yukleme basarisiz.');
+      setStatus(error instanceof Error ? error.message : 'Yükleme başarısız.');
     } finally {
       setUploadingField('');
     }
@@ -250,7 +250,7 @@ export function CollectionEditor({ collection }) {
 
   async function createNew() {
     if (!newId.trim()) {
-      setStatus('Yeni kayit ID bos olamaz.');
+      setStatus('Yeni kayıt ID boş olamaz.');
       return;
     }
 
@@ -260,7 +260,7 @@ export function CollectionEditor({ collection }) {
       beforeData: null,
     });
     setSelectedId(id);
-    setStatus('Yeni kayit olusturuldu.');
+    setStatus('Yeni kayıt oluşturuldu.');
     setNewId('');
     await refresh();
   }
@@ -281,7 +281,7 @@ export function CollectionEditor({ collection }) {
   function startNew() {
     setSelectedId('');
     setForm({ visible: true });
-    setStatus('Yeni kayit icin alanlari doldurun.');
+    setStatus('Yeni kayıt için alanları doldurun.');
   }
 
   const filteredItems = items.filter((item) => {
@@ -292,16 +292,16 @@ export function CollectionEditor({ collection }) {
   return (
     <section className="panel">
       <h2>{COLLECTION_LABELS[collection]}</h2>
-      <p className="muted">Sol taraftan kayit secin veya yeni kayit olusturun. JSON bilmeden duzenleyebilirsiniz.</p>
+      <p className="muted">Sol taraftan kayıt seçin veya yeni kayıt oluşturun. JSON bilmeden düzenleyebilirsiniz.</p>
       <div className="layout-2">
         <aside className="card">
-          <h3>Kayitlar</h3>
+          <h3>Kayıtlar</h3>
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Kayit ara..."
+            placeholder="Kayıt ara..."
           />
-          <button onClick={startNew}>+ Yeni Kayit</button>
+          <button onClick={startNew}>+ Yeni Kayıt</button>
           <div className="list">
             {filteredItems.map((item) => (
               <button
@@ -313,19 +313,19 @@ export function CollectionEditor({ collection }) {
                 <small>{item.id}</small>
               </button>
             ))}
-            {filteredItems.length === 0 ? <p className="muted">Kayit bulunamadi.</p> : null}
+            {filteredItems.length === 0 ? <p className="muted">Kayıt bulunamadı.</p> : null}
           </div>
         </aside>
         <div className="card">
-          <h3>{selectedId ? 'Kayit Duzenle' : 'Yeni Kayit'}</h3>
+          <h3>{selectedId ? 'Kayıt Düzenle' : 'Yeni Kayıt'}</h3>
           <div className="actions">
             <input
               value={newId}
               onChange={(e) => setNewId(e.target.value)}
-              placeholder="dokuman-id"
+              placeholder="doküman-id"
             />
-            <button onClick={createFromTitle}>ID Otomatik Uret</button>
-            <button onClick={createNew}>Kaydi Olustur</button>
+            <button onClick={createFromTitle}>ID Otomatik Üret</button>
+            <button onClick={createNew}>Kaydı Oluştur</button>
           </div>
           <div className="form-grid">
             {fields.map((field) => {
@@ -360,7 +360,7 @@ export function CollectionEditor({ collection }) {
               if (field.type === 'socialLinks') {
                 return (
                   <label key={field.key} className="span-2">
-                    Sosyal Linkler (Her satir: Platform|URL|true/false)
+                    Sosyal Linkler (Her satır: Platform|URL|true/false)
                     <textarea
                       value={value ?? ''}
                       onChange={(e) => updateField(field.key, e.target.value)}
@@ -379,7 +379,7 @@ export function CollectionEditor({ collection }) {
                       type="text"
                       value={value ?? ''}
                       onChange={(e) => updateField(field.key, e.target.value)}
-                      placeholder="Yukledikten sonra URL otomatik gelir (manuel de yazabilirsiniz)"
+                      placeholder="Yükledikten sonra URL otomatik gelir (manuel de yazabilirsiniz)"
                     />
                     <div className="upload-row">
                       <input
@@ -395,7 +395,7 @@ export function CollectionEditor({ collection }) {
                         onClick={() => uploadForField(field.key)}
                         disabled={!uploadFiles[field.key] || uploadingField === field.key}
                       >
-                        {uploadingField === field.key ? 'Yukleniyor...' : 'Dosya Yukle'}
+                        {uploadingField === field.key ? 'Yükleniyor...' : 'Dosya Yükle'}
                       </button>
                     </div>
                   </label>
@@ -416,10 +416,10 @@ export function CollectionEditor({ collection }) {
           </div>
           <div className="actions">
             <button onClick={saveSelected} disabled={!selectedId}>
-              Secili Kaydi Kaydet
+              Seçili Kaydı Kaydet
             </button>
             <button onClick={deleteSelected} disabled={!selectedId}>
-              Seciliyi Sil
+              Seçiliyi Sil
             </button>
             <button onClick={refresh}>Yenile</button>
           </div>

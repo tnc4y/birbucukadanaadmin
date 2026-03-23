@@ -35,21 +35,21 @@ export function AdminDashboard() {
   return (
     <main className="dashboard dashboard-shell">
       <section className="hero card">
-        <h2>1.5 Adana Yonetim Paneli</h2>
+        <h2>1.5 Adana Yönetim Paneli</h2>
         <p className="muted">
-          Teknik bilgi gerektirmeden kayit ekleyebilir, duzenleyebilir ve silebilirsiniz.
-          Sol menuden bolum secerek icerikleri ve ayarlari yonetebilirsiniz.
+          Teknik bilgi gerektirmeden kayıt ekleyebilir, düzenleyebilir ve silebilirsiniz.
+          Sol menüden bölüm seçerek içerikleri ve ayarları yönetebilirsiniz.
         </p>
       </section>
 
       <aside className="card side-menu">
-        <h3>Menu</h3>
+        <h3>Menü</h3>
         <div className="menu-list">
           <button
             className={activeView === 'home' ? 'selected' : ''}
             onClick={() => setActiveView('home')}
           >
-            Ana Sayfa / Istatistikler
+            Ana Sayfa / İstatistikler
           </button>
           <button
             className={activeView === 'settings' ? 'selected' : ''}
@@ -61,11 +61,11 @@ export function AdminDashboard() {
             className={activeView === 'logs' ? 'selected' : ''}
             onClick={() => setActiveView('logs')}
           >
-            Islem Loglari
+            İşlem Logları
           </button>
         </div>
 
-        <h3>Icerik Yonetimi</h3>
+        <h3>İçerik Yönetimi</h3>
         <div className="menu-list">
           {COLLECTIONS.map((key) => {
             const viewKey = `collection:${key}`;

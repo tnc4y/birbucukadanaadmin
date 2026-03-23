@@ -1,51 +1,51 @@
 export const metadata = {
-  title: 'Mobil Uygulama Gizlilik Politikasi',
+  title: 'Mobil Uygulama Gizlilik Politikası',
 };
 
 export default function PrivacyPolicyPage() {
   return (
     <main className="policy-wrap">
       <article className="card policy-card">
-        <h1>Mobil Uygulama Gizlilik Politikasi</h1>
-        <p className="muted">Son guncelleme: 18 Mart 2026</p>
+        <h1>Mobil Uygulama Gizlilik Politikası</h1>
+        <p className="muted">Son güncelleme: 18 Mart 2026</p>
         <p>
-          Bu gizlilik politikasi 1.5 Adana mobil uygulamasi icin hazirlanmistir. Admin paneli bu
-          sayfaya sadece yonlendirme amaciyla baglanti verir.
+          Bu gizlilik politikası 1.5 Adana mobil uygulaması için hazırlanmıştır. Admin paneli bu
+          sayfaya sadece yönlendirme amacıyla bağlantı verir.
         </p>
 
         <h2>1. Toplanan Veriler</h2>
         <p>
-          Mobil uygulama genel olarak icerik goruntuleme amaclidir. Uygulama kullanimi sirasinda
-          cihaz bilgileri, uygulama surumu ve teknik hata kayitlari Firebase servisleri tarafindan
-          otomatik olarak islenebilir.
+          Mobil uygulama genel olarak içerik görüntüleme amaçlıdır. Uygulama kullanımı sırasında
+          cihaz bilgileri, uygulama sürümü ve teknik hata kayıtları Firebase servisleri tarafından
+          otomatik olarak işlenebilir.
         </p>
 
-        <h2>2. Verilerin Kullanimi</h2>
+        <h2>2. Verilerin Kullanımı</h2>
         <p>
-          Veriler uygulamanin guvenli calismasi, iceriklerin sunulmasi, performansin iyilestirilmesi
-          ve teknik sorunlarin tespit edilmesi amaclariyla kullanilir.
+          Veriler uygulamanın güvenli çalışması, içeriklerin sunulması, performansın iyileştirilmesi
+          ve teknik sorunların tespit edilmesi amaçlarıyla kullanılır.
         </p>
 
-        <h2>3. Verilerin Saklanmasi</h2>
+        <h2>3. Verilerin Saklanması</h2>
         <p>
-          Veriler Firebase altyapisinda saklanir. Yetkisiz erisimleri engellemek icin Firebase
-          guvenlik kurallari uygulanir.
+          Veriler Firebase altyapısında saklanır. Yetkisiz erişimleri engellemek için Firebase
+          güvenlik kuralları uygulanır.
         </p>
 
-        <h2>4. Ucuncu Taraf Hizmetler</h2>
+        <h2>4. Üçüncü Taraf Hizmetler</h2>
         <p>
-          Mobil uygulama Google Firebase (or. Firestore, Analytics, Crashlytics) gibi ucuncu taraf
-          hizmetleri kullanabilir. Bu servislerin veri isleme surecleri kendi gizlilik politikalarina
+          Mobil uygulama Google Firebase (ör. Firestore, Analytics, Crashlytics) gibi üçüncü taraf
+          hizmetleri kullanabilir. Bu servislerin veri işleme süreçleri kendi gizlilik politikalarına
           tabidir.
         </p>
 
-        <h2>5. Iletisim</h2>
+        <h2>5. İletişim</h2>
         <p>
-          Gizlilikle ilgili sorulariniz icin uygulama yoneticisiyle iletisime gecebilirsiniz.
+          Gizlilikle ilgili sorularınız için uygulama yöneticisiyle iletişime geçebilirsiniz.
         </p>
 
         <p className="muted">
-          Bu metin bilgilendirme amaclidir. Gerekli durumlarda hukuk danismanligi alinmasi onerilir.
+          Bu metin bilgilendirme amaçlıdır. Gerekli durumlarda hukuk danışmanlığı alınması önerilir.
         </p>
       </article>
     </main>

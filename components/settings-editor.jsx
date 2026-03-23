@@ -96,26 +96,26 @@ export function SettingsEditor() {
     <section className="panel">
       <h2>Genel Ayarlar</h2>
       <div className="card">
-        <p className="muted">Bu alanlar mobil uygulamanin hakkimizda, iletisim ve drawer bolumlerini besler.</p>
+        <p className="muted">Bu alanlar mobil uygulamanın hakkımızda, iletişim ve drawer bölümlerini besler.</p>
         <div className="form-grid">
           <label>
-            Uygulama Adi
+            Uygulama Adı
             <input
               value={form.appName}
               onChange={(e) => updateField('appName', e.target.value)}
-              placeholder="1.5 Adana Teknoloji Takimlari"
+              placeholder="1.5 Adana Teknoloji Takımları"
             />
           </label>
           <label>
-            Hakkimizda Basligi
+            Hakkımızda Başlığı
             <input
               value={form.aboutTitle}
               onChange={(e) => updateField('aboutTitle', e.target.value)}
-              placeholder="Hakkimizda"
+              placeholder="Hakkımızda"
             />
           </label>
           <label className="span-2">
-            Hakkimizda Metni
+            Hakkımızda Metni
             <textarea
               value={form.aboutContent}
               onChange={(e) => updateField('aboutContent', e.target.value)}
@@ -123,7 +123,7 @@ export function SettingsEditor() {
             />
           </label>
           <label>
-            Iletisim E-posta
+            İletişim E-posta
             <input
               value={form.contactEmail}
               onChange={(e) => updateField('contactEmail', e.target.value)}
@@ -131,7 +131,7 @@ export function SettingsEditor() {
             />
           </label>
           <label>
-            Iletisim Telefon
+            İletişim Telefon
             <input
               value={form.contactPhone}
               onChange={(e) => updateField('contactPhone', e.target.value)}
@@ -139,7 +139,7 @@ export function SettingsEditor() {
             />
           </label>
           <label className="span-2">
-            Iletisim Adres
+            İletişim Adres
             <input
               value={form.contactAddress}
               onChange={(e) => updateField('contactAddress', e.target.value)}
@@ -147,7 +147,7 @@ export function SettingsEditor() {
             />
           </label>
           <label className="span-2">
-            Sosyal Linkler (Her satir: Platform|URL|true/false)
+            Sosyal Linkler (Her satır: Platform|URL|true/false)
             <textarea
               value={form.socialLinksText}
               onChange={(e) => updateField('socialLinksText', e.target.value)}

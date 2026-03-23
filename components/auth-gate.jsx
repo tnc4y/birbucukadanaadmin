@@ -39,26 +39,26 @@ export function AuthGate({ children }) {
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Giris basarisiz.');
+      setError(err instanceof Error ? err.message : 'Giriş başarısız.');
     }
   }
 
   if (loading) {
-    return <div className="center">Yukleniyor...</div>;
+    return <div className="center">Yükleniyor...</div>;
   }
 
   if (!authorized) {
     return (
       <div className="auth-wrap">
         <form onSubmit={onSubmit} className="card">
-          <h1>Admin Giris</h1>
-          <p>Firebase Auth ile giris yapin.</p>
+          <h1>Admin Giriş</h1>
+          <p>Firebase Auth ile giriş yapın.</p>
           <label>
             E-posta
             <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
           </label>
           <label>
-            Sifre
+            Şifre
             <input
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -67,9 +67,9 @@ export function AuthGate({ children }) {
             />
           </label>
           {error ? <p className="error">{error}</p> : null}
-          <button type="submit">Giris Yap</button>
+          <button type="submit">Giriş Yap</button>
           <a className="text-link" href="/privacy-policy" target="_blank" rel="noreferrer">
-            Mobil Uygulama Gizlilik Politikasi
+            Mobil Uygulama Gizlilik Politikası
           </a>
         </form>
       </div>
@@ -82,9 +82,9 @@ export function AuthGate({ children }) {
         <div>{user?.email}</div>
         <div className="topbar-actions">
           <a className="text-link" href="/privacy-policy" target="_blank" rel="noreferrer">
-            Mobil Uygulama Gizlilik Politikasi
+            Mobil Uygulama Gizlilik Politikası
           </a>
-          <button onClick={() => signOut(auth)}>Cikis</button>
+          <button onClick={() => signOut(auth)}>Çıkış</button>
         </div>
       </div>
       {children}

@@ -11,11 +11,11 @@ function formatTime(value) {
 
 function describe(item) {
   const actionMap = {
-    create: 'EKLEDI',
-    update: 'DUZENLEDI',
-    delete: 'SILDI',
+    create: 'EKLEDİ',
+    update: 'DÜZENLEDİ',
+    delete: 'SİLDİ',
   };
-  const action = actionMap[item?.action] ?? item?.action ?? 'ISLEM';
+  const action = actionMap[item?.action] ?? item?.action ?? 'İŞLEM';
   return `${action} / ${item?.collectionName ?? '-'} / ${item?.docId ?? '-'}`;
 }
 
@@ -32,7 +32,7 @@ export function AuditLogPanel() {
       const result = await listAuditLogs(100);
       setLogs(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Loglar alinamadi.');
+      setError(err instanceof Error ? err.message : 'Loglar alınamadı.');
     } finally {
       setLoading(false);
     }
@@ -45,15 +45,15 @@ export function AuditLogPanel() {
   return (
     <section className="panel">
       <div className="actions">
-        <h2>Son Islem Kayitlari</h2>
+        <h2>Son İşlem Kayıtları</h2>
         <button type="button" onClick={refresh}>
           Yenile
         </button>
       </div>
       <div className="card">
-        {loading ? <p className="muted">Yukleniyor...</p> : null}
+        {loading ? <p className="muted">Yükleniyor...</p> : null}
         {error ? <p className="error">{error}</p> : null}
-        {!loading && !error && logs.length === 0 ? <p className="muted">Henuz log kaydi yok.</p> : null}
+        {!loading && !error && logs.length === 0 ? <p className="muted">Henüz log kaydı yok.</p> : null}
         {logs.length > 0 ? (
           <div className="log-list">
             {logs.map((log) => (
