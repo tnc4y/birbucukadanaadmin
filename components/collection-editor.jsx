@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import MDEditor from '@uiw/react-md-editor';
 
 import { COLLECTION_LABELS } from '@/lib/collections';
 import { auth } from '@/lib/firebase';
@@ -566,13 +567,14 @@ export function CollectionEditor({ collection }) {
                 {field.label}
                 {isTeamMarkdown ? (
                   <div className="markdown-tools">
-                    <div className="toolbar-row">
-                      <button type="button" onClick={() => applyMarkdownSnippet(mode, '# Başlık')}>H1</button>
-                      <button type="button" onClick={() => applyMarkdownSnippet(mode, '## Alt Başlık')}>H2</button>
-                      <button type="button" onClick={() => applyMarkdownSnippet(mode, '**Kalın metin**')}>Kalın</button>
-                      <button type="button" onClick={() => applyMarkdownSnippet(mode, '- Madde 1\n- Madde 2')}>Liste</button>
-                      <button type="button" onClick={() => applyMarkdownSnippet(mode, '> Vurgulu alıntı')}>Alıntı</button>
-                      <button type="button" onClick={() => applyMarkdownSnippet(mode, '[Bağlantı Metni](https://example.com)')}>Link</button>
+                    <div className="md-editor-wrap" data-color-mode="light">
+                      <MDEditor
+                        value={value ?? ''}
+                        onChange={(next) => updateFn(field.key, next ?? '')}
+                        height={340}
+                        preview="live"
+                        visibleDragbar={false}
+                      />
                     </div>
 
                     <div className="gallery-manager">
@@ -614,12 +616,13 @@ export function CollectionEditor({ collection }) {
                       )}
                     </div>
                   </div>
-                ) : null}
-                <textarea
-                  rows={4}
-                  value={value ?? ''}
-                  onChange={(e) => updateFn(field.key, e.target.value)}
-                />
+                ) : (
+                  <textarea
+                    rows={4}
+                    value={value ?? ''}
+                    onChange={(e) => updateFn(field.key, e.target.value)}
+                  />
+                )}
               </label>
             );
           }

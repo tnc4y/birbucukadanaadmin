@@ -1,3 +1,6 @@
+@import '@uiw/react-md-editor/markdown-editor.css';
+@import '@uiw/react-markdown-preview/markdown.css';
+
 * {
   box-sizing: border-box;
 }
@@ -273,6 +276,21 @@ button:disabled {
 .markdown-tools {
   display: grid;
   gap: 10px;
+}
+
+.md-editor-wrap {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.md-editor-wrap .w-md-editor {
+  box-shadow: none;
+}
+
+.md-editor-wrap .w-md-editor-toolbar {
+  border-bottom: 1px solid var(--border);
 }
 
 .toolbar-row {
