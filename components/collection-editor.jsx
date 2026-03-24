@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { COLLECTION_LABELS } from '@/lib/collections';
 import { auth } from '@/lib/firebase';
@@ -40,7 +40,7 @@ const SCHEMA = {
     { key: 'tag', label: 'Etiket (Genel / Takım)' },
     { key: 'date', label: 'Tarih (YYYY-MM-DD)', type: 'date' },
     { key: 'imageUrl', label: 'Görsel URL' },
-    { key: 'teamId', label: 'Takım ID (opsiyonel)' },
+    { key: 'teamId', label: 'Takım (opsiyonel)', type: 'teamSelect' },
     { key: 'visible', label: 'Aktif', type: 'boolean' },
   ],
   sponsors: [
@@ -48,14 +48,14 @@ const SCHEMA = {
     { key: 'logoUrl', label: 'Logo URL' },
     { key: 'website', label: 'Website' },
     { key: 'description', label: 'Açıklama' },
-    { key: 'teamId', label: 'Takım ID (boş ise genel sponsor)' },
+    { key: 'teamId', label: 'Takım (boş ise genel sponsor)', type: 'teamSelect' },
     { key: 'visible', label: 'Aktif', type: 'boolean' },
   ],
   competitions: [
     { key: 'title', label: 'Yarışma Adı' },
     { key: 'performance', label: 'Performans' },
     { key: 'year', label: 'Yıl' },
-    { key: 'teamId', label: 'Takım ID (opsiyonel)' },
+    { key: 'teamId', label: 'Takım (opsiyonel)', type: 'teamSelect' },
     { key: 'imageUrl', label: 'Görsel URL' },
     { key: 'visible', label: 'Aktif', type: 'boolean' },
   ],
@@ -63,7 +63,7 @@ const SCHEMA = {
     { key: 'title', label: 'Ödül Adı' },
     { key: 'description', label: 'Açıklama', type: 'textarea' },
     { key: 'projectName', label: 'Hangi Projeden Alındı' },
-    { key: 'teamId', label: 'Takım ID (opsiyonel)' },
+    { key: 'teamId', label: 'Takım (opsiyonel)', type: 'teamSelect' },
     { key: 'mediaUrl', label: 'Görsel/Medya URL' },
     { key: 'year', label: 'Yıl' },
     { key: 'visible', label: 'Aktif', type: 'boolean' },
@@ -71,11 +71,16 @@ const SCHEMA = {
   projects: [
     { key: 'title', label: 'Proje Adı' },
     { key: 'description', label: 'Açıklama', type: 'textarea' },
-    { key: 'teamId', label: 'Takım ID' },
+    { key: 'teamId', label: 'Takım', type: 'teamSelect' },
     { key: 'mediaUrl', label: 'Görsel URL' },
     { key: 'repoUrl', label: 'Repo/Website Linki' },
     { key: 'visible', label: 'Aktif', type: 'boolean' },
   ],
+};
+
+const ORDER_FIELD = {
+  announcements: 'order',
+  teams: 'homeOrder',
 };
 
 function socialLinksToText(links) {
@@ -111,19 +116,26 @@ function toForm(collection, data = {}) {
 
 function fromForm(collection, form) {
   const out = { ...form };
+
   if (collection === 'teams') {
     out.socialLinks = textToSocialLinks(form.socialLinksText ?? '');
     delete out.socialLinksText;
   }
+
   if (typeof out.order === 'string' && out.order.trim() !== '') {
     out.order = Number(out.order);
   }
   if (typeof out.homeOrder === 'string' && out.homeOrder.trim() !== '') {
     out.homeOrder = Number(out.homeOrder);
   }
+
   if (typeof out.date === 'string' && out.date.trim() === '') {
     delete out.date;
   }
+  if (typeof out.teamId === 'string' && out.teamId.trim() === '') {
+    delete out.teamId;
+  }
+
   return out;
 }
 
@@ -143,6 +155,7 @@ function slugify(value) {
 
 export function CollectionEditor({ collection }) {
   const [items, setItems] = useState([]);
+  const [teamOptions, setTeamOptions] = useState([]);
   const [selectedId, setSelectedId] = useState('');
   const [form, setForm] = useState({});
   const [newId, setNewId] = useState('');
@@ -150,7 +163,10 @@ export function CollectionEditor({ collection }) {
   const [status, setStatus] = useState('');
   const [uploadFiles, setUploadFiles] = useState({});
   const [uploadingField, setUploadingField] = useState('');
+
   const fields = SCHEMA[collection] ?? [];
+  const orderKey = ORDER_FIELD[collection] ?? null;
+  const supportsManualId = collection !== 'announcements';
 
   function actorInfo() {
     const user = auth.currentUser;
@@ -164,12 +180,45 @@ export function CollectionEditor({ collection }) {
     return ['imageUrl', 'logoUrl', 'bannerUrl', 'mediaUrl'].includes(fieldKey);
   }
 
-  async function refresh() {
-    const result = await listCollection(collection);
-    setItems(result);
+  function sortForCollection(rows) {
+    if (!orderKey) return rows;
+    return [...rows].sort((a, b) => {
+      const aOrder = Number(a?.data?.[orderKey] ?? Number.MAX_SAFE_INTEGER);
+      const bOrder = Number(b?.data?.[orderKey] ?? Number.MAX_SAFE_INTEGER);
+      return aOrder - bOrder;
+    });
+  }
 
-    if (!selectedId && result.length > 0) {
-      const first = result[0];
+  function nextOrderValue(rows) {
+    if (!orderKey) return undefined;
+    const existing = rows
+      .map((item) => Number(item?.data?.[orderKey]))
+      .filter((value) => Number.isFinite(value));
+    if (existing.length === 0) return 1;
+    return Math.max(...existing) + 1;
+  }
+
+  function createDocIdFromForm() {
+    const base = form.name || form.title || 'kayit';
+    return `${slugify(base)}-${Date.now()}`;
+  }
+
+  async function refresh() {
+    const [result, teams] = await Promise.all([
+      listCollection(collection),
+      listCollection('teams'),
+    ]);
+
+    const sorted = sortForCollection(result);
+    const visibleTeams = teams
+      .filter((item) => item?.data?.visible !== false)
+      .sort((a, b) => (a?.data?.name ?? '').localeCompare(b?.data?.name ?? ''));
+
+    setItems(sorted);
+    setTeamOptions(visibleTeams);
+
+    if (!selectedId && sorted.length > 0) {
+      const first = sorted[0];
       setSelectedId(first.id);
       setForm(toForm(collection, first.data));
     }
@@ -249,12 +298,12 @@ export function CollectionEditor({ collection }) {
   }
 
   async function createNew() {
-    if (!newId.trim()) {
+    if (supportsManualId && !newId.trim()) {
       setStatus('Yeni kayıt ID boş olamaz.');
       return;
     }
 
-    const id = newId.trim();
+    const id = supportsManualId ? newId.trim() : createDocIdFromForm();
     await upsertCollectionDoc(collection, id, fromForm(collection, form), {
       actor: actorInfo(),
       beforeData: null,
@@ -262,6 +311,37 @@ export function CollectionEditor({ collection }) {
     setSelectedId(id);
     setStatus('Yeni kayıt oluşturuldu.');
     setNewId('');
+    await refresh();
+  }
+
+  async function normalizeOrdering() {
+    if (!orderKey) return;
+    const ordered = sortForCollection(items);
+    let changed = 0;
+
+    for (let i = 0; i < ordered.length; i += 1) {
+      const item = ordered[i];
+      const nextValue = i + 1;
+      const currentValue = Number(item?.data?.[orderKey]);
+      if (currentValue === nextValue) continue;
+
+      await upsertCollectionDoc(
+        collection,
+        item.id,
+        { ...item.data, [orderKey]: nextValue },
+        {
+          actor: actorInfo(),
+          beforeData: item.data,
+        }
+      );
+      changed += 1;
+    }
+
+    setStatus(
+      changed > 0
+        ? `Sıralama düzeltildi. ${changed} kayıt güncellendi.`
+        : 'Sıralama zaten düzenli.'
+    );
     await refresh();
   }
 
@@ -279,15 +359,25 @@ export function CollectionEditor({ collection }) {
   }
 
   function startNew() {
+    const defaultForm = { visible: true };
+    const nextOrder = nextOrderValue(items);
+    if (orderKey && nextOrder !== undefined) {
+      defaultForm[orderKey] = nextOrder;
+    }
+
     setSelectedId('');
-    setForm({ visible: true });
+    setForm(defaultForm);
     setStatus('Yeni kayıt için alanları doldurun.');
   }
 
-  const filteredItems = items.filter((item) => {
-    const haystack = `${item.id} ${item.data.name ?? ''} ${item.data.title ?? ''}`.toLowerCase();
-    return haystack.includes(search.toLowerCase());
-  });
+  const filteredItems = useMemo(
+    () =>
+      items.filter((item) => {
+        const haystack = `${item.id} ${item.data.name ?? ''} ${item.data.title ?? ''}`.toLowerCase();
+        return haystack.includes(search.toLowerCase());
+      }),
+    [items, search]
+  );
 
   return (
     <section className="panel">
@@ -311,6 +401,14 @@ export function CollectionEditor({ collection }) {
               >
                 <strong>{summarize(item)}</strong>
                 <small>{item.id}</small>
+                {orderKey ? (
+                  <small>
+                    Sıra:{' '}
+                    {Number.isFinite(Number(item?.data?.[orderKey]))
+                      ? Number(item?.data?.[orderKey])
+                      : '-'}
+                  </small>
+                ) : null}
               </button>
             ))}
             {filteredItems.length === 0 ? <p className="muted">Kayıt bulunamadı.</p> : null}
@@ -319,13 +417,20 @@ export function CollectionEditor({ collection }) {
         <div className="card">
           <h3>{selectedId ? 'Kayıt Düzenle' : 'Yeni Kayıt'}</h3>
           <div className="actions">
-            <input
-              value={newId}
-              onChange={(e) => setNewId(e.target.value)}
-              placeholder="doküman-id"
-            />
-            <button onClick={createFromTitle}>ID Otomatik Üret</button>
+            {supportsManualId ? (
+              <>
+                <input
+                  value={newId}
+                  onChange={(e) => setNewId(e.target.value)}
+                  placeholder="doküman-id"
+                />
+                <button onClick={createFromTitle}>ID Otomatik Üret</button>
+              </>
+            ) : (
+              <p className="muted">Duyurularda ID otomatik üretilir, manuel giriş gerekmez.</p>
+            )}
             <button onClick={createNew}>Kaydı Oluştur</button>
+            {orderKey ? <button onClick={normalizeOrdering}>Sıralamayı Otomatik Düzelt</button> : null}
           </div>
           <div className="form-grid">
             {fields.map((field) => {
@@ -367,6 +472,25 @@ export function CollectionEditor({ collection }) {
                       rows={4}
                       placeholder="Instagram|https://instagram.com/...|true"
                     />
+                  </label>
+                );
+              }
+
+              if (field.type === 'teamSelect') {
+                return (
+                  <label key={field.key}>
+                    {field.label}
+                    <select
+                      value={value ?? ''}
+                      onChange={(e) => updateField(field.key, e.target.value)}
+                    >
+                      <option value="">Genel / Takımsız</option>
+                      {teamOptions.map((team) => (
+                        <option key={team.id} value={team.id}>
+                          {team.data?.name || team.id}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                 );
               }
