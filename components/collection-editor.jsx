@@ -147,7 +147,13 @@ function fromForm(collection, form) {
 }
 
 function summarize(item) {
-  return item?.data?.name || item?.data?.title || item?.id;
+  return (
+    item?.data?.name ||
+    item?.data?.title ||
+    item?.data?.fullName ||
+    item?.data?.eventTitle ||
+    item?.id
+  );
 }
 
 function slugify(value) {
@@ -381,7 +387,7 @@ export function CollectionEditor({ collection }) {
   const filteredItems = useMemo(
     () =>
       items.filter((item) => {
-        const haystack = `${item.id} ${item.data?.name ?? ''} ${item.data?.title ?? ''}`.toLowerCase();
+        const haystack = `${item.id} ${item.data?.name ?? ''} ${item.data?.title ?? ''} ${item.data?.fullName ?? ''} ${item.data?.eventTitle ?? ''} ${item.data?.email ?? ''} ${item.data?.phone ?? ''}`.toLowerCase();
         return haystack.includes(search.toLowerCase());
       }),
     [items, search]
