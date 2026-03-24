@@ -38,7 +38,27 @@ const SCHEMA = {
     { key: 'date', label: 'Tarih (YYYY-MM-DD)', type: 'date' },
     { key: 'imageUrl', label: 'Görsel URL' },
     { key: 'teamId', label: 'Takım (opsiyonel)', type: 'teamSelect' },
+    {
+      key: 'participationMode',
+      label: 'Katılım Seçeneği',
+      type: 'select',
+      options: [
+        { value: 'none', label: 'Kapalı' },
+        { value: 'link', label: 'Normal Link' },
+        { value: 'form', label: 'Uygulama İçi Form' },
+      ],
+    },
+    { key: 'participationUrl', label: 'Katılım Linki (link modu için)' },
     { key: 'visible', label: 'Aktif', type: 'boolean' },
+  ],
+  event_participations: [
+    { key: 'eventTitle', label: 'Etkinlik' },
+    { key: 'fullName', label: 'Ad Soyad' },
+    { key: 'email', label: 'E-posta' },
+    { key: 'phone', label: 'Telefon' },
+    { key: 'note', label: 'Not' },
+    { key: 'status', label: 'Durum' },
+    { key: 'deviceId', label: 'Cihaz ID' },
   ],
   sponsors: [
     { key: 'name', label: 'Sponsor Adı' },
@@ -208,7 +228,9 @@ export function CollectionEditor({ collection }) {
 
   const fields = SCHEMA[collection] ?? [];
   const orderKey = ORDER_FIELD[collection] ?? null;
-  const supportsManualId = collection !== 'announcements';
+  const readOnlyCollection = collection === 'event_participations';
+  const supportsCreate = !readOnlyCollection;
+  const supportsManualId = supportsCreate && collection !== 'announcements';
 
   function actorInfo() {
     const user = auth.currentUser;
@@ -429,7 +451,7 @@ export function CollectionEditor({ collection }) {
   }
 
   async function saveSelected() {
-    if (!selectedId) return;
+    if (!selectedId || readOnlyCollection) return;
 
     const existing = items.find((item) => item.id === selectedId)?.data ?? null;
     await upsertCollectionDoc(collection, selectedId, fromForm(collection, editForm), {
@@ -447,6 +469,8 @@ export function CollectionEditor({ collection }) {
   }
 
   async function createNew() {
+    if (!supportsCreate) return;
+
     if (supportsManualId && !newId.trim()) {
       setStatus('Yeni kayıt ID boş olamaz.');
       return;
@@ -468,7 +492,7 @@ export function CollectionEditor({ collection }) {
   }
 
   async function deleteSelected() {
-    if (!selectedId) return;
+    if (!selectedId || readOnlyCollection) return;
     const existing = items.find((item) => item.id === selectedId)?.data ?? null;
 
     await removeCollectionDoc(collection, selectedId, {
@@ -657,6 +681,22 @@ export function CollectionEditor({ collection }) {
             );
           }
 
+          if (field.type === 'select') {
+            const options = field.options ?? [];
+            return (
+              <label key={`${mode}-${field.key}`}>
+                {field.label}
+                <select value={value ?? ''} onChange={(e) => updateFn(field.key, e.target.value)}>
+                  {options.map((option) => (
+                    <option key={`${field.key}-${option.value}`} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            );
+          }
+
           if (isUploadableField(field.key)) {
             const uploadKey = `${mode}:${field.key}`;
             return (
@@ -713,9 +753,11 @@ export function CollectionEditor({ collection }) {
         <button className={view === 'records' ? 'selected' : ''} onClick={() => setView('records')}>
           Kayıtlar
         </button>
-        <button className={view === 'new' ? 'selected' : ''} onClick={() => setView('new')}>
-          Yeni Kayıt
-        </button>
+        {supportsCreate ? (
+          <button className={view === 'new' ? 'selected' : ''} onClick={() => setView('new')}>
+            Yeni Kayıt
+          </button>
+        ) : null}
         {orderKey ? (
           <button className={view === 'order' ? 'selected' : ''} onClick={() => setView('order')}>
             Sıralama
@@ -754,8 +796,8 @@ export function CollectionEditor({ collection }) {
               <>
                 {renderFields('edit', editForm, updateEditField)}
                 <div className="actions">
-                  <button onClick={saveSelected}>Seçili Kaydı Güncelle</button>
-                  <button onClick={deleteSelected}>Seçiliyi Sil</button>
+                  {!readOnlyCollection ? <button onClick={saveSelected}>Seçili Kaydı Güncelle</button> : null}
+                  {!readOnlyCollection ? <button onClick={deleteSelected}>Seçiliyi Sil</button> : null}
                   <button onClick={refresh}>Yenile</button>
                 </div>
               </>
@@ -766,7 +808,7 @@ export function CollectionEditor({ collection }) {
         </div>
       ) : null}
 
-      {view === 'new' ? (
+      {view === 'new' && supportsCreate ? (
         <div className="card">
           <h3>Yeni Kayıt Oluştur</h3>
           <p className="muted">Tek işlemle kayıt oluşturulur. Oluşturduktan sonra kayıtlar sekmesinden güncelleyebilirsiniz.</p>
