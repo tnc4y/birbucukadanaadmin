@@ -159,6 +159,22 @@ button:disabled {
   font-size: 26px;
 }
 
+.hero-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.hero-logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 8px;
+}
+
 .side-menu {
   position: sticky;
   top: 16px;
@@ -205,6 +221,23 @@ button:disabled {
   align-items: center;
 }
 
+.segmented {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.segmented button {
+  background: var(--surface-soft);
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+
+.segmented button.selected {
+  background: var(--primary-strong);
+  color: #fff;
+}
+
 .upload-box {
   display: grid;
   gap: 8px;
@@ -215,6 +248,22 @@ button:disabled {
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
+}
+
+.logo-preview-wrap {
+  width: 120px;
+  height: 120px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+}
+
+.logo-preview {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .upload-row input[type='file'] {
@@ -250,6 +299,62 @@ button:disabled {
 
 .list button small {
   color: var(--text-soft);
+}
+
+.dnd-list {
+  display: grid;
+  gap: 8px;
+}
+
+.dnd-item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-soft);
+  padding: 10px;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.dnd-item.dragging {
+  opacity: 0.6;
+}
+
+.drag-handle {
+  user-select: none;
+  color: var(--text-soft);
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.dnd-main {
+  display: grid;
+  gap: 2px;
+}
+
+.dnd-main small {
+  color: var(--text-soft);
+}
+
+.order-badge {
+  background: #e7efff;
+  color: var(--primary-strong);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-weight: 700;
+}
+
+.mini-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.mini-actions button {
+  background: #f0f5ff;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 8px;
 }
 
 .log-list {
@@ -391,5 +496,13 @@ button:disabled {
   .topbar {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .hero-brand {
+    align-items: flex-start;
+  }
+
+  .dnd-item {
+    grid-template-columns: auto 1fr;
   }
 }

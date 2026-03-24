@@ -4,11 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { COLLECTION_LABELS } from '@/lib/collections';
 import { auth } from '@/lib/firebase';
-import {
-  listCollection,
-  removeCollectionDoc,
-  upsertCollectionDoc,
-} from '@/lib/firestore-admin';
+import { listCollection, removeCollectionDoc, upsertCollectionDoc } from '@/lib/firestore-admin';
 
 const SCHEMA = {
   announcements: [
@@ -85,9 +81,7 @@ const ORDER_FIELD = {
 
 function socialLinksToText(links) {
   if (!Array.isArray(links) || links.length === 0) return '';
-  return links
-    .map((item) => `${item.platform ?? ''}|${item.url ?? ''}|${item.visible ?? true}`)
-    .join('\n');
+  return links.map((item) => `${item.platform ?? ''}|${item.url ?? ''}|${item.visible ?? true}`).join('\n');
 }
 
 function textToSocialLinks(text) {
@@ -107,11 +101,11 @@ function textToSocialLinks(text) {
 }
 
 function toForm(collection, data = {}) {
-  const form = { ...data };
+  const out = { ...data };
   if (collection === 'teams') {
-    form.socialLinksText = socialLinksToText(data.socialLinks);
+    out.socialLinksText = socialLinksToText(data.socialLinks);
   }
-  return form;
+  return out;
 }
 
 function fromForm(collection, form) {
@@ -122,25 +116,17 @@ function fromForm(collection, form) {
     delete out.socialLinksText;
   }
 
-  if (typeof out.order === 'string' && out.order.trim() !== '') {
-    out.order = Number(out.order);
-  }
-  if (typeof out.homeOrder === 'string' && out.homeOrder.trim() !== '') {
-    out.homeOrder = Number(out.homeOrder);
-  }
+  if (typeof out.order === 'string' && out.order.trim() !== '') out.order = Number(out.order);
+  if (typeof out.homeOrder === 'string' && out.homeOrder.trim() !== '') out.homeOrder = Number(out.homeOrder);
 
-  if (typeof out.date === 'string' && out.date.trim() === '') {
-    delete out.date;
-  }
-  if (typeof out.teamId === 'string' && out.teamId.trim() === '') {
-    delete out.teamId;
-  }
+  if (typeof out.date === 'string' && out.date.trim() === '') delete out.date;
+  if (typeof out.teamId === 'string' && out.teamId.trim() === '') delete out.teamId;
 
   return out;
 }
 
 function summarize(item) {
-  return item.data.name || item.data.title || item.id;
+  return item?.data?.name || item?.data?.title || item?.id;
 }
 
 function slugify(value) {
@@ -153,67 +139,31 @@ function slugify(value) {
     .replace(/-+/g, '-');
 }
 
+function moveArrayItem(arr, from, to) {
+  const copy = [...arr];
+  const [item] = copy.splice(from, 1);
+  copy.splice(to, 0, item);
+  return copy;
+}
+
 export function CollectionEditor({ collection }) {
+  const [view, setView] = useState('records');
   const [items, setItems] = useState([]);
   const [teamOptions, setTeamOptions] = useState([]);
   const [selectedId, setSelectedId] = useState('');
-  const [form, setForm] = useState({});
+  const [editForm, setEditForm] = useState({});
+  const [newForm, setNewForm] = useState({ visible: true });
   const [newId, setNewId] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [uploadFiles, setUploadFiles] = useState({});
   const [uploadingField, setUploadingField] = useState('');
-
-  const orderKey = ORDER_FIELD[collection] ?? null;
-  const supportsManualId = collection !== 'announcements';
-
-  const filteredItems = useMemo(
-    () =>
-      items.filter((item) => {
-        const haystack = `${item.id} ${item.data.name ?? ''} ${item.data.title ?? ''}`.toLowerCase();
-        return haystack.includes(search.toLowerCase());
-      }),
-    [items, search]
-  );
-
-  const orderingReport = useMemo(() => {
-    if (!orderKey) return null;
-
-    const sorted = sortForCollection(items);
-    const rows = sorted.map((item, index) => {
-      const current = Number(item?.data?.[orderKey]);
-      const expected = index + 1;
-      const hasValue = Number.isFinite(current);
-      return {
-        id: item.id,
-        label: summarize(item),
-        current,
-        expected,
-        isOk: hasValue && current === expected,
-      };
-    });
-
-    const counts = new Map();
-    rows.forEach((row) => {
-      if (!Number.isFinite(row.current)) return;
-      counts.set(row.current, (counts.get(row.current) ?? 0) + 1);
-    });
-
-    const duplicateValues = [...counts.entries()]
-      .filter(([, count]) => count > 1)
-      .map(([value]) => value)
-      .sort((a, b) => a - b);
-
-    const issues = rows.filter((row) => !row.isOk).length;
-
-    return {
-      rows,
-      issues,
-      duplicateValues,
-    };
-  }, [items, orderKey]);
+  const [orderDraft, setOrderDraft] = useState([]);
+  const [draggingId, setDraggingId] = useState('');
 
   const fields = SCHEMA[collection] ?? [];
+  const orderKey = ORDER_FIELD[collection] ?? null;
+  const supportsManualId = collection !== 'announcements';
 
   function actorInfo() {
     const user = auth.currentUser;
@@ -221,10 +171,6 @@ export function CollectionEditor({ collection }) {
       uid: user?.uid ?? '',
       email: user?.email ?? '',
     };
-  }
-
-  function isUploadableField(fieldKey) {
-    return ['imageUrl', 'logoUrl', 'bannerUrl', 'mediaUrl'].includes(fieldKey);
   }
 
   function sortForCollection(rows) {
@@ -245,60 +191,105 @@ export function CollectionEditor({ collection }) {
     return Math.max(...existing) + 1;
   }
 
-  function createDocIdFromForm() {
-    const base = form.name || form.title || 'kayit';
-    return `${slugify(base)}-${Date.now()}`;
+  function isUploadableField(fieldKey) {
+    return ['imageUrl', 'logoUrl', 'bannerUrl', 'mediaUrl'].includes(fieldKey);
+  }
+
+  function updateEditField(key, value) {
+    setEditForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function updateNewField(key, value) {
+    setNewForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function prepareNewForm(rows) {
+    const defaultForm = { visible: true };
+    const next = nextOrderValue(rows);
+    if (orderKey && next !== undefined) {
+      defaultForm[orderKey] = next;
+    }
+    return defaultForm;
   }
 
   async function refresh() {
-    const [result, teams] = await Promise.all([
-      listCollection(collection),
-      listCollection('teams'),
-    ]);
-
+    const [result, teams] = await Promise.all([listCollection(collection), listCollection('teams')]);
     const sorted = sortForCollection(result);
+
     const visibleTeams = teams
       .filter((item) => item?.data?.visible !== false)
       .sort((a, b) => (a?.data?.name ?? '').localeCompare(b?.data?.name ?? ''));
 
     setItems(sorted);
     setTeamOptions(visibleTeams);
+    setOrderDraft(sorted.map((item) => item.id));
 
     if (!selectedId && sorted.length > 0) {
-      const first = sorted[0];
-      setSelectedId(first.id);
-      setForm(toForm(collection, first.data));
+      setSelectedId(sorted[0].id);
+      setEditForm(toForm(collection, sorted[0].data));
     }
+
+    if (sorted.length === 0) {
+      setSelectedId('');
+      setEditForm({});
+    }
+
+    setNewForm(prepareNewForm(sorted));
   }
 
   useEffect(() => {
+    setView('records');
     setSelectedId('');
-    setForm({});
+    setEditForm({});
+    setNewForm({ visible: true });
     setNewId('');
     setSearch('');
     setStatus('');
+    setUploadFiles({});
+    setUploadingField('');
     refresh();
   }, [collection]);
+
+  const filteredItems = useMemo(
+    () =>
+      items.filter((item) => {
+        const haystack = `${item.id} ${item.data?.name ?? ''} ${item.data?.title ?? ''}`.toLowerCase();
+        return haystack.includes(search.toLowerCase());
+      }),
+    [items, search]
+  );
+
+  const orderedDraftItems = useMemo(() => {
+    const map = new Map(items.map((item) => [item.id, item]));
+    return orderDraft.map((id) => map.get(id)).filter(Boolean);
+  }, [items, orderDraft]);
+
+  const orderIssueCount = useMemo(() => {
+    if (!orderKey) return 0;
+    return orderedDraftItems.reduce((acc, item, index) => {
+      const expected = index + 1;
+      const current = Number(item?.data?.[orderKey]);
+      return acc + (current === expected ? 0 : 1);
+    }, 0);
+  }, [orderedDraftItems, orderKey]);
 
   function pick(id) {
     setSelectedId(id);
     const found = items.find((item) => item.id === id);
-    setForm(toForm(collection, found?.data ?? {}));
+    setEditForm(toForm(collection, found?.data ?? {}));
     setStatus('');
+    setView('records');
   }
 
-  function updateField(key, value) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }
-
-  async function uploadForField(fieldKey) {
-    const file = uploadFiles[fieldKey];
+  async function uploadForField(fieldKey, mode) {
+    const file = uploadFiles[`${mode}:${fieldKey}`];
     if (!file) {
       setStatus('Önce bir dosya seçin.');
       return;
     }
 
-    setUploadingField(fieldKey);
+    const uploadKey = `${mode}:${fieldKey}`;
+    setUploadingField(uploadKey);
     setStatus('Dosya yükleniyor...');
 
     try {
@@ -316,8 +307,13 @@ export function CollectionEditor({ collection }) {
         throw new Error(result?.error || 'Yükleme başarısız.');
       }
 
-      updateField(fieldKey, result.secureUrl);
-      setUploadFiles((prev) => ({ ...prev, [fieldKey]: null }));
+      if (mode === 'edit') {
+        updateEditField(fieldKey, result.secureUrl);
+      } else {
+        updateNewField(fieldKey, result.secureUrl);
+      }
+
+      setUploadFiles((prev) => ({ ...prev, [uploadKey]: null }));
       setStatus('Dosya yüklendi ve URL otomatik dolduruldu.');
     } catch (error) {
       setStatus(error instanceof Error ? error.message : 'Yükleme başarısız.');
@@ -326,27 +322,22 @@ export function CollectionEditor({ collection }) {
     }
   }
 
-  function createFromTitle() {
-    const base = form.name || form.title || '';
-    if (!base) return;
-    setNewId(slugify(base));
-  }
-
   async function saveSelected() {
     if (!selectedId) return;
 
     const existing = items.find((item) => item.id === selectedId)?.data ?? null;
-    await upsertCollectionDoc(collection, selectedId, fromForm(collection, form), {
+    await upsertCollectionDoc(collection, selectedId, fromForm(collection, editForm), {
       actor: actorInfo(),
       beforeData: existing,
     });
-    if (orderKey) {
-      await normalizeOrdering({ silent: true });
-      setStatus('Kaydedildi. Sıralama da otomatik kontrol edildi.');
-    } else {
-      setStatus('Kaydedildi.');
-    }
+
+    setStatus('Kayıt güncellendi.');
     await refresh();
+  }
+
+  function createDocIdFromForm() {
+    const base = newForm.name || newForm.title || 'kayit';
+    return `${slugify(base)}-${Date.now()}`;
   }
 
   async function createNew() {
@@ -356,37 +347,79 @@ export function CollectionEditor({ collection }) {
     }
 
     const id = supportsManualId ? newId.trim() : createDocIdFromForm();
-    await upsertCollectionDoc(collection, id, fromForm(collection, form), {
+    const payload = fromForm(collection, newForm);
+
+    await upsertCollectionDoc(collection, id, payload, {
       actor: actorInfo(),
       beforeData: null,
     });
-    setSelectedId(id);
-    if (orderKey) {
-      await normalizeOrdering({ silent: true });
-      setStatus('Yeni kayıt oluşturuldu. Sıralama da otomatik kontrol edildi.');
-    } else {
-      setStatus('Yeni kayıt oluşturuldu.');
-    }
+
+    setStatus('Yeni kayıt oluşturuldu.');
     setNewId('');
+    setView('records');
+    await refresh();
+    pick(id);
+  }
+
+  async function deleteSelected() {
+    if (!selectedId) return;
+    const existing = items.find((item) => item.id === selectedId)?.data ?? null;
+
+    await removeCollectionDoc(collection, selectedId, {
+      actor: actorInfo(),
+      beforeData: existing,
+    });
+
+    setStatus('Kayıt silindi.');
+    setSelectedId('');
+    setEditForm({});
     await refresh();
   }
 
-  async function normalizeOrdering(options = {}) {
-    const { silent = false } = options;
+  function onDragStart(id) {
+    setDraggingId(id);
+  }
+
+  function onDropTo(targetId) {
+    if (!draggingId || draggingId === targetId) return;
+
+    const fromIndex = orderDraft.indexOf(draggingId);
+    const toIndex = orderDraft.indexOf(targetId);
+    if (fromIndex < 0 || toIndex < 0) return;
+
+    setOrderDraft((prev) => moveArrayItem(prev, fromIndex, toIndex));
+    setDraggingId('');
+  }
+
+  function moveUp(id) {
+    const index = orderDraft.indexOf(id);
+    if (index <= 0) return;
+    setOrderDraft((prev) => moveArrayItem(prev, index, index - 1));
+  }
+
+  function moveDown(id) {
+    const index = orderDraft.indexOf(id);
+    if (index < 0 || index >= orderDraft.length - 1) return;
+    setOrderDraft((prev) => moveArrayItem(prev, index, index + 1));
+  }
+
+  async function saveOrder() {
     if (!orderKey) return;
-    const ordered = sortForCollection(items);
     let changed = 0;
 
-    for (let i = 0; i < ordered.length; i += 1) {
-      const item = ordered[i];
-      const nextValue = i + 1;
-      const currentValue = Number(item?.data?.[orderKey]);
-      if (currentValue === nextValue) continue;
+    for (let i = 0; i < orderDraft.length; i += 1) {
+      const id = orderDraft[i];
+      const item = items.find((row) => row.id === id);
+      if (!item) continue;
+
+      const expected = i + 1;
+      const current = Number(item?.data?.[orderKey]);
+      if (current === expected) continue;
 
       await upsertCollectionDoc(
         collection,
-        item.id,
-        { ...item.data, [orderKey]: nextValue },
+        id,
+        { ...item.data, [orderKey]: expected },
         {
           actor: actorInfo(),
           beforeData: item.data,
@@ -395,247 +428,264 @@ export function CollectionEditor({ collection }) {
       changed += 1;
     }
 
-    if (!silent) {
-      setStatus(
-        changed > 0
-          ? `Sıralama düzeltildi. ${changed} kayıt güncellendi.`
-          : 'Sıralama zaten düzenli.'
-      );
-    }
+    setStatus(changed > 0 ? `Sıralama kaydedildi. ${changed} kayıt güncellendi.` : 'Sıralama zaten güncel.');
     await refresh();
   }
 
-  async function deleteSelected() {
-    if (!selectedId) return;
-    const existing = items.find((item) => item.id === selectedId)?.data ?? null;
-    await removeCollectionDoc(collection, selectedId, {
-      actor: actorInfo(),
-      beforeData: existing,
-    });
-    if (orderKey) {
-      await normalizeOrdering({ silent: true });
-      setStatus('Silindi. Sıralama otomatik güncellendi.');
-    } else {
-      setStatus('Silindi.');
-    }
-    setSelectedId('');
-    setForm({});
-    await refresh();
-  }
+  function renderFields(mode, formState, updateFn) {
+    return (
+      <div className="form-grid">
+        {fields.map((field) => {
+          const value = formState[field.key];
 
-  function startNew() {
-    const defaultForm = { visible: true };
-    const nextOrder = nextOrderValue(items);
-    if (orderKey && nextOrder !== undefined) {
-      defaultForm[orderKey] = nextOrder;
-    }
+          if (field.type === 'boolean') {
+            return (
+              <label key={`${mode}-${field.key}`} className="check span-2">
+                <input
+                  type="checkbox"
+                  checked={Boolean(value)}
+                  onChange={(e) => updateFn(field.key, e.target.checked)}
+                />
+                <span>{field.label}</span>
+              </label>
+            );
+          }
 
-    setSelectedId('');
-    setForm(defaultForm);
-    setStatus('Yeni kayıt için alanları doldurun.');
+          if (field.type === 'textarea') {
+            return (
+              <label key={`${mode}-${field.key}`} className="span-2">
+                {field.label}
+                <textarea
+                  rows={4}
+                  value={value ?? ''}
+                  onChange={(e) => updateFn(field.key, e.target.value)}
+                />
+              </label>
+            );
+          }
+
+          if (field.type === 'socialLinks') {
+            return (
+              <label key={`${mode}-${field.key}`} className="span-2">
+                Sosyal Linkler (Her satır: Platform|URL|true/false)
+                <textarea
+                  rows={4}
+                  value={value ?? ''}
+                  onChange={(e) => updateFn(field.key, e.target.value)}
+                  placeholder="Instagram|https://instagram.com/...|true"
+                />
+              </label>
+            );
+          }
+
+          if (field.type === 'teamSelect') {
+            return (
+              <label key={`${mode}-${field.key}`}>
+                {field.label}
+                <select value={value ?? ''} onChange={(e) => updateFn(field.key, e.target.value)}>
+                  <option value="">Genel / Takımsız</option>
+                  {teamOptions.map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.data?.name || team.id}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            );
+          }
+
+          if (isUploadableField(field.key)) {
+            const uploadKey = `${mode}:${field.key}`;
+            return (
+              <label key={`${mode}-${field.key}`} className="span-2 upload-box">
+                {field.label}
+                <input
+                  type="text"
+                  value={value ?? ''}
+                  onChange={(e) => updateFn(field.key, e.target.value)}
+                  placeholder="Yükledikten sonra URL otomatik gelir (manuel de yazabilirsiniz)"
+                />
+                <div className="upload-row">
+                  <input
+                    type="file"
+                    accept=".svg,image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0] ?? null;
+                      setUploadFiles((prev) => ({ ...prev, [uploadKey]: file }));
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => uploadForField(field.key, mode)}
+                    disabled={!uploadFiles[uploadKey] || uploadingField === uploadKey}
+                  >
+                    {uploadingField === uploadKey ? 'Yükleniyor...' : 'Dosya Yükle'}
+                  </button>
+                </div>
+              </label>
+            );
+          }
+
+          return (
+            <label key={`${mode}-${field.key}`}>
+              {field.label}
+              <input
+                type={field.type === 'number' ? 'number' : 'text'}
+                value={value ?? ''}
+                onChange={(e) => updateFn(field.key, e.target.value)}
+              />
+            </label>
+          );
+        })}
+      </div>
+    );
   }
 
   return (
     <section className="panel">
       <h2>{COLLECTION_LABELS[collection]}</h2>
-      <p className="muted">Sol taraftan kayıt seçin veya yeni kayıt oluşturun. JSON bilmeden düzenleyebilirsiniz.</p>
-      <div className="layout-2">
-        <aside className="card">
-          <h3>Kayıtlar</h3>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Kayıt ara..."
-          />
-          <button onClick={startNew}>+ Yeni Kayıt</button>
-          <div className="list">
-            {filteredItems.map((item) => (
-              <button
-                key={item.id}
-                className={item.id === selectedId ? 'selected' : ''}
-                onClick={() => pick(item.id)}
-              >
-                <strong>{summarize(item)}</strong>
-                <small>{item.id}</small>
-                {orderKey ? (
-                  <small>
-                    Sıra:{' '}
-                    {Number.isFinite(Number(item?.data?.[orderKey]))
-                      ? Number(item?.data?.[orderKey])
-                      : '-'}
-                  </small>
-                ) : null}
-              </button>
-            ))}
-            {filteredItems.length === 0 ? <p className="muted">Kayıt bulunamadı.</p> : null}
-          </div>
-        </aside>
-        <div className="card">
-          <h3>{selectedId ? 'Kayıt Düzenle' : 'Yeni Kayıt'}</h3>
-          <div className="actions">
-            {supportsManualId ? (
+      <p className="muted">Kayıtları yönetmek, yeni kayıt eklemek ve sıralama yapmak için aşağıdaki sekmeleri kullanın.</p>
+
+      <div className="segmented">
+        <button className={view === 'records' ? 'selected' : ''} onClick={() => setView('records')}>
+          Kayıtlar
+        </button>
+        <button className={view === 'new' ? 'selected' : ''} onClick={() => setView('new')}>
+          Yeni Kayıt
+        </button>
+        {orderKey ? (
+          <button className={view === 'order' ? 'selected' : ''} onClick={() => setView('order')}>
+            Sıralama
+          </button>
+        ) : null}
+      </div>
+
+      {view === 'records' ? (
+        <div className="layout-2">
+          <aside className="card">
+            <h3>Mevcut Kayıtlar</h3>
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Kayıt ara..." />
+            <div className="list">
+              {filteredItems.map((item) => (
+                <button
+                  key={item.id}
+                  className={item.id === selectedId ? 'selected' : ''}
+                  onClick={() => pick(item.id)}
+                >
+                  <strong>{summarize(item)}</strong>
+                  <small>{item.id}</small>
+                  {orderKey ? (
+                    <small>
+                      Sıra: {Number.isFinite(Number(item?.data?.[orderKey])) ? Number(item?.data?.[orderKey]) : '-'}
+                    </small>
+                  ) : null}
+                </button>
+              ))}
+              {filteredItems.length === 0 ? <p className="muted">Kayıt bulunamadı.</p> : null}
+            </div>
+          </aside>
+
+          <div className="card">
+            <h3>{selectedId ? 'Kayıt Güncelle' : 'Düzenlemek İçin Kayıt Seçin'}</h3>
+            {selectedId ? (
               <>
-                <input
-                  value={newId}
-                  onChange={(e) => setNewId(e.target.value)}
-                  placeholder="doküman-id"
-                />
-                <button onClick={createFromTitle}>ID Otomatik Üret</button>
+                {renderFields('edit', editForm, updateEditField)}
+                <div className="actions">
+                  <button onClick={saveSelected}>Seçili Kaydı Güncelle</button>
+                  <button onClick={deleteSelected}>Seçiliyi Sil</button>
+                  <button onClick={refresh}>Yenile</button>
+                </div>
               </>
             ) : (
-              <p className="muted">Duyurularda ID otomatik üretilir, manuel giriş gerekmez.</p>
+              <p className="muted">Soldan bir kayıt seçtiğinizde düzenleme formu açılır.</p>
             )}
-            <button onClick={createNew}>Kaydı Oluştur</button>
-            {orderKey ? <button onClick={() => normalizeOrdering()}>Sıralamayı Otomatik Düzelt</button> : null}
           </div>
-          {orderKey && orderingReport ? (
-            <section className="card">
-              <h3>Sıralama Kontrolü</h3>
-              <p className="muted">
-                Bu içerik grubunda sıra alanı: <strong>{orderKey}</strong>
-              </p>
-              {orderingReport.issues > 0 ? (
-                <p className="error">
-                  {orderingReport.issues} kayıt sıralama açısından sorunlu görünüyor.
-                </p>
-              ) : (
-                <p className="ok">Sıralama düzenli.</p>
-              )}
-              {orderingReport.duplicateValues.length > 0 ? (
-                <p className="error">
-                  Çakışan sıra değerleri: {orderingReport.duplicateValues.join(', ')}
-                </p>
-              ) : null}
-              <div className="list">
-                {orderingReport.rows.map((row) => (
-                  <div key={row.id}>
-                    <strong>{row.label}</strong>
-                    <small>
-                      ID: {row.id} | Mevcut sıra: {Number.isFinite(row.current) ? row.current : '-'} | Olması gereken: {row.expected}
-                    </small>
-                  </div>
-                ))}
-              </div>
-            </section>
-          ) : null}
-          <div className="form-grid">
-            {fields.map((field) => {
-              const value = form[field.key];
-
-              if (field.type === 'boolean') {
-                return (
-                  <label key={field.key} className="check span-2">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(value)}
-                      onChange={(e) => updateField(field.key, e.target.checked)}
-                    />
-                    <span>{field.label}</span>
-                  </label>
-                );
-              }
-
-              if (field.type === 'textarea') {
-                return (
-                  <label key={field.key} className="span-2">
-                    {field.label}
-                    <textarea
-                      value={value ?? ''}
-                      onChange={(e) => updateField(field.key, e.target.value)}
-                      rows={4}
-                    />
-                  </label>
-                );
-              }
-
-              if (field.type === 'socialLinks') {
-                return (
-                  <label key={field.key} className="span-2">
-                    Sosyal Linkler (Her satır: Platform|URL|true/false)
-                    <textarea
-                      value={value ?? ''}
-                      onChange={(e) => updateField(field.key, e.target.value)}
-                      rows={4}
-                      placeholder="Instagram|https://instagram.com/...|true"
-                    />
-                  </label>
-                );
-              }
-
-              if (field.type === 'teamSelect') {
-                return (
-                  <label key={field.key}>
-                    {field.label}
-                    <select
-                      value={value ?? ''}
-                      onChange={(e) => updateField(field.key, e.target.value)}
-                    >
-                      <option value="">Genel / Takımsız</option>
-                      {teamOptions.map((team) => (
-                        <option key={team.id} value={team.id}>
-                          {team.data?.name || team.id}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                );
-              }
-
-              if (isUploadableField(field.key)) {
-                return (
-                  <label key={field.key} className="span-2 upload-box">
-                    {field.label}
-                    <input
-                      type="text"
-                      value={value ?? ''}
-                      onChange={(e) => updateField(field.key, e.target.value)}
-                      placeholder="Yükledikten sonra URL otomatik gelir (manuel de yazabilirsiniz)"
-                    />
-                    <div className="upload-row">
-                      <input
-                        type="file"
-                        accept=".svg,image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0] ?? null;
-                          setUploadFiles((prev) => ({ ...prev, [field.key]: file }));
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => uploadForField(field.key)}
-                        disabled={!uploadFiles[field.key] || uploadingField === field.key}
-                      >
-                        {uploadingField === field.key ? 'Yükleniyor...' : 'Dosya Yükle'}
-                      </button>
-                    </div>
-                  </label>
-                );
-              }
-
-              return (
-                <label key={field.key}>
-                  {field.label}
-                  <input
-                    type={field.type === 'number' ? 'number' : 'text'}
-                    value={value ?? ''}
-                    onChange={(e) => updateField(field.key, e.target.value)}
-                  />
-                </label>
-              );
-            })}
-          </div>
-          <div className="actions">
-            <button onClick={saveSelected} disabled={!selectedId}>
-              Seçili Kaydı Kaydet
-            </button>
-            <button onClick={deleteSelected} disabled={!selectedId}>
-              Seçiliyi Sil
-            </button>
-            <button onClick={refresh}>Yenile</button>
-          </div>
-          {status ? <p className="ok">{status}</p> : null}
         </div>
-      </div>
+      ) : null}
+
+      {view === 'new' ? (
+        <div className="card">
+          <h3>Yeni Kayıt Oluştur</h3>
+          <p className="muted">Tek işlemle kayıt oluşturulur. Oluşturduktan sonra kayıtlar sekmesinden güncelleyebilirsiniz.</p>
+
+          {supportsManualId ? (
+            <div className="actions">
+              <input
+                value={newId}
+                onChange={(e) => setNewId(e.target.value)}
+                placeholder="dokuman-id"
+              />
+              <button onClick={() => setNewId(slugify(newForm.name || newForm.title || ''))}>ID Otomatik Üret</button>
+            </div>
+          ) : (
+            <p className="muted">Bu içerik türünde ID otomatik üretilir.</p>
+          )}
+
+          {renderFields('new', newForm, updateNewField)}
+
+          <div className="actions">
+            <button onClick={createNew}>Kaydı Oluştur</button>
+            <button
+              onClick={() => {
+                setNewForm(prepareNewForm(items));
+                setNewId('');
+              }}
+            >
+              Formu Temizle
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {view === 'order' && orderKey ? (
+        <div className="card">
+          <h3>Sıralama Ayarları</h3>
+          <p className="muted">
+            Kayıtları sürükleyip bırakarak sıralayın. Mobilde ok butonlarını kullanabilirsiniz.
+          </p>
+          {orderIssueCount > 0 ? (
+            <p className="error">Mevcut sırada {orderIssueCount} kayıt beklenen sırada değil.</p>
+          ) : (
+            <p className="ok">Sıralama düzenli görünüyor.</p>
+          )}
+
+          <div className="dnd-list">
+            {orderedDraftItems.map((item, index) => (
+              <div
+                key={item.id}
+                className={`dnd-item ${draggingId === item.id ? 'dragging' : ''}`}
+                draggable
+                onDragStart={() => onDragStart(item.id)}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => onDropTo(item.id)}
+                onDragEnd={() => setDraggingId('')}
+              >
+                <span className="drag-handle">⋮⋮</span>
+                <div className="dnd-main">
+                  <strong>{summarize(item)}</strong>
+                  <small>{item.id}</small>
+                </div>
+                <span className="order-badge">#{index + 1}</span>
+                <div className="mini-actions">
+                  <button type="button" onClick={() => moveUp(item.id)}>
+                    Yukarı
+                  </button>
+                  <button type="button" onClick={() => moveDown(item.id)}>
+                    Aşağı
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="actions">
+            <button onClick={saveOrder}>Sıralamayı Kaydet</button>
+            <button onClick={() => setOrderDraft(sortForCollection(items).map((item) => item.id))}>Sıfırla</button>
+          </div>
+        </div>
+      ) : null}
+
+      {status ? <p className="ok">{status}</p> : null}
     </section>
   );
 }

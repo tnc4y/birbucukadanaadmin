@@ -8,6 +8,7 @@ import { getSettings, upsertSettings } from '@/lib/firestore-admin';
 export function SettingsEditor() {
   const [form, setForm] = useState({
     appName: '',
+    adminLogoUrl: '',
     aboutTitle: '',
     aboutContent: '',
     contactEmail: '',
@@ -17,6 +18,8 @@ export function SettingsEditor() {
   });
   const [status, setStatus] = useState('');
   const [originalData, setOriginalData] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoUploading, setLogoUploading] = useState(false);
 
   function toText(links) {
     if (!Array.isArray(links) || links.length === 0) return '';
@@ -46,6 +49,7 @@ export function SettingsEditor() {
     setOriginalData(data);
     setForm({
       appName: data.appName ?? '',
+      adminLogoUrl: data.adminLogoUrl ?? '',
       aboutTitle: data.aboutTitle ?? '',
       aboutContent: data.aboutContent ?? '',
       contactEmail: data.contactEmail ?? '',
@@ -63,6 +67,7 @@ export function SettingsEditor() {
   async function save() {
     await upsertSettings({
       appName: form.appName,
+      adminLogoUrl: form.adminLogoUrl,
       aboutTitle: form.aboutTitle,
       aboutContent: form.aboutContent,
       contactEmail: form.contactEmail,
@@ -78,6 +83,7 @@ export function SettingsEditor() {
     });
     setOriginalData({
       appName: form.appName,
+      adminLogoUrl: form.adminLogoUrl,
       aboutTitle: form.aboutTitle,
       aboutContent: form.aboutContent,
       contactEmail: form.contactEmail,
@@ -86,6 +92,40 @@ export function SettingsEditor() {
       socialLinks: fromText(form.socialLinksText),
     });
     setStatus('Ayarlar kaydedildi.');
+  }
+
+  async function uploadLogo() {
+    if (!logoFile) {
+      setStatus('Önce bir logo dosyası seçin.');
+      return;
+    }
+
+    setLogoUploading(true);
+    setStatus('Logo yükleniyor...');
+
+    try {
+      const body = new FormData();
+      body.append('file', logoFile);
+      body.append('folder', 'birbucukadana/settings');
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body,
+      });
+
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result?.error || 'Logo yükleme başarısız.');
+      }
+
+      updateField('adminLogoUrl', result.secureUrl);
+      setLogoFile(null);
+      setStatus('Logo yüklendi. Kaydet diyerek kalıcı hale getirin.');
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : 'Logo yükleme başarısız.');
+    } finally {
+      setLogoUploading(false);
+    }
   }
 
   function updateField(key, value) {
@@ -105,6 +145,29 @@ export function SettingsEditor() {
               onChange={(e) => updateField('appName', e.target.value)}
               placeholder="1.5 Adana Teknoloji Takımları"
             />
+          </label>
+          <label className="span-2 upload-box">
+            Yönetim Paneli Logo URL
+            <input
+              value={form.adminLogoUrl}
+              onChange={(e) => updateField('adminLogoUrl', e.target.value)}
+              placeholder="https://..."
+            />
+            <div className="upload-row">
+              <input
+                type="file"
+                accept=".svg,image/*"
+                onChange={(e) => setLogoFile(e.target.files?.[0] ?? null)}
+              />
+              <button type="button" onClick={uploadLogo} disabled={!logoFile || logoUploading}>
+                {logoUploading ? 'Yükleniyor...' : 'Logo Yükle'}
+              </button>
+            </div>
+            {form.adminLogoUrl ? (
+              <div className="logo-preview-wrap">
+                <img src={form.adminLogoUrl} alt="Panel logosu" className="logo-preview" />
+              </div>
+            ) : null}
           </label>
           <label>
             Hakkımızda Başlığı

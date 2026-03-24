@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { COLLECTIONS, COLLECTION_LABELS } from '@/lib/collections';
 import { AdminHomeOverview } from './admin-home-overview';
@@ -8,9 +8,14 @@ import { AuditLogPanel } from './audit-log-panel';
 import { CollectionEditor } from './collection-editor';
 import { PrivacyPolicyEditor } from './privacy-policy-editor';
 import { SettingsEditor } from './settings-editor';
+import { getSettings } from '@/lib/firestore-admin';
 
 export function AdminDashboard() {
   const [activeView, setActiveView] = useState('home');
+  const [brand, setBrand] = useState({
+    appName: '1.5 Adana',
+    adminLogoUrl: '',
+  });
 
   const mainMenu = [
     { key: 'home', label: 'Genel Bakış' },
@@ -18,6 +23,17 @@ export function AdminDashboard() {
     { key: 'privacy', label: 'Gizlilik Politikası' },
     { key: 'logs', label: 'İşlem Kayıtları' },
   ];
+
+  useEffect(() => {
+    getSettings()
+      .then((settings) => {
+        setBrand({
+          appName: settings?.appName || '1.5 Adana',
+          adminLogoUrl: settings?.adminLogoUrl || '',
+        });
+      })
+      .catch(() => {});
+  }, []);
 
   function renderContent() {
     if (activeView === 'home') {
@@ -47,10 +63,17 @@ export function AdminDashboard() {
   return (
     <main className="dashboard dashboard-shell">
       <section className="hero card">
-        <h2>Yönetim Paneli</h2>
-        <p className="muted">
-          İçerikleri, uygulama ayarlarını ve gizlilik politikasını tek yerden kolayca yönetin.
-        </p>
+        <div className="hero-brand">
+          {brand.adminLogoUrl ? (
+            <img src={brand.adminLogoUrl} alt="Panel logosu" className="hero-logo" />
+          ) : null}
+          <div>
+            <h2>{brand.appName} Yönetim Paneli</h2>
+            <p className="muted">
+              İçerikleri, uygulama ayarlarını ve gizlilik politikasını tek yerden kolayca yönetin.
+            </p>
+          </div>
+        </div>
       </section>
 
       <aside className="card side-menu">
