@@ -270,6 +270,47 @@ button:disabled {
   max-width: 100%;
 }
 
+.markdown-tools {
+  display: grid;
+  gap: 10px;
+}
+
+.toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.toolbar-row button {
+  background: #edf4ff;
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 10px;
+}
+
+.gallery-manager {
+  background: var(--surface-soft);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.gallery-list {
+  display: grid;
+  gap: 8px;
+}
+
+.gallery-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  padding: 8px;
+  display: grid;
+  gap: 6px;
+}
+
 .list {
   display: grid;
   gap: 7px;

@@ -24,7 +24,7 @@ const SCHEMA = {
     { key: 'name', label: 'Takım Adı' },
     { key: 'logoUrl', label: 'Logo URL' },
     { key: 'shortDescription', label: 'Kısa Açıklama' },
-    { key: 'description', label: 'Detay Açıklama', type: 'textarea' },
+    { key: 'description', label: 'Detay Yazısı (Markdown)', type: 'textarea' },
     { key: 'bannerUrl', label: 'Banner URL' },
     { key: 'homeOrder', label: 'Anasayfa Sırası', type: 'number' },
     { key: 'socialLinksText', label: 'Sosyal Linkler', type: 'socialLinks' },
@@ -146,6 +146,49 @@ function moveArrayItem(arr, from, to) {
   return copy;
 }
 
+const GALLERY_START = '<!-- GALLERY_START -->';
+const GALLERY_END = '<!-- GALLERY_END -->';
+
+function extractGalleryUrls(markdown = '') {
+  const start = markdown.indexOf(GALLERY_START);
+  const end = markdown.indexOf(GALLERY_END);
+  if (start < 0 || end < 0 || end <= start) return [];
+
+  const block = markdown.slice(start + GALLERY_START.length, end).trim();
+  if (!block) return [];
+
+  return block
+    .split('\n')
+    .map((line) => line.trim())
+    .map((line) => {
+      const match = line.match(/^!\[[^\]]*\]\(([^)]+)\)$/);
+      return match?.[1]?.trim() ?? '';
+    })
+    .filter(Boolean);
+}
+
+function upsertGalleryBlock(markdown = '', urls = []) {
+  const cleanUrls = urls.map((url) => url.trim()).filter(Boolean);
+
+  const lines = cleanUrls.map((url, idx) => `![Galeri ${idx + 1}](${url})`);
+  const galleryText =
+    cleanUrls.length > 0
+      ? `${GALLERY_START}\n\n## Takım Galerisi\n\n${lines.join('\n\n')}\n\n${GALLERY_END}`
+      : '';
+
+  const pattern = new RegExp(`${GALLERY_START}[\\s\\S]*?${GALLERY_END}`, 'm');
+  if (pattern.test(markdown)) {
+    const replaced = markdown.replace(pattern, galleryText).trim();
+    return replaced;
+  }
+
+  if (!galleryText) return markdown.trim();
+
+  const base = markdown.trim();
+  if (!base) return galleryText;
+  return `${base}\n\n${galleryText}`;
+}
+
 export function CollectionEditor({ collection }) {
   const [view, setView] = useState('records');
   const [items, setItems] = useState([]);
@@ -160,6 +203,7 @@ export function CollectionEditor({ collection }) {
   const [uploadingField, setUploadingField] = useState('');
   const [orderDraft, setOrderDraft] = useState([]);
   const [draggingId, setDraggingId] = useState('');
+  const [galleryInput, setGalleryInput] = useState({ edit: '', new: '' });
 
   const fields = SCHEMA[collection] ?? [];
   const orderKey = ORDER_FIELD[collection] ?? null;
@@ -201,6 +245,67 @@ export function CollectionEditor({ collection }) {
 
   function updateNewField(key, value) {
     setNewForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function updateGalleryInput(mode, value) {
+    setGalleryInput((prev) => ({ ...prev, [mode]: value }));
+  }
+
+  function applyMarkdownSnippet(mode, snippet) {
+    if (mode === 'edit') {
+      const prev = editForm.description ?? '';
+      const spacer = prev.trim().isEmpty ? '' : '\n\n';
+      updateEditField('description', `${prev}${spacer}${snippet}`);
+      return;
+    }
+
+    const prev = newForm.description ?? '';
+    const spacer = prev.trim().isEmpty ? '' : '\n\n';
+    updateNewField('description', `${prev}${spacer}${snippet}`);
+  }
+
+  function setMarkdownValue(mode, value) {
+    if (mode === 'edit') {
+      updateEditField('description', value);
+    } else {
+      updateNewField('description', value);
+    }
+  }
+
+  function getMarkdownValue(mode) {
+    return mode === 'edit' ? (editForm.description ?? '') : (newForm.description ?? '');
+  }
+
+  function addGalleryImage(mode) {
+    const url = (galleryInput[mode] ?? '').trim();
+    if (!url) {
+      setStatus('Görsel URL girin.');
+      return;
+    }
+
+    const markdown = getMarkdownValue(mode);
+    const current = extractGalleryUrls(markdown);
+    const next = [...current, url];
+    setMarkdownValue(mode, upsertGalleryBlock(markdown, next));
+    updateGalleryInput(mode, '');
+    setStatus('Galeri görseli eklendi.');
+  }
+
+  function moveGalleryImage(mode, index, direction) {
+    const markdown = getMarkdownValue(mode);
+    const current = extractGalleryUrls(markdown);
+    const target = index + direction;
+    if (target < 0 || target >= current.length) return;
+
+    const reordered = moveArrayItem(current, index, target);
+    setMarkdownValue(mode, upsertGalleryBlock(markdown, reordered));
+  }
+
+  function removeGalleryImage(mode, index) {
+    const markdown = getMarkdownValue(mode);
+    const current = extractGalleryUrls(markdown);
+    const next = current.filter((_, i) => i != index);
+    setMarkdownValue(mode, upsertGalleryBlock(markdown, next));
   }
 
   function prepareNewForm(rows) {
@@ -452,9 +557,64 @@ export function CollectionEditor({ collection }) {
           }
 
           if (field.type === 'textarea') {
+            const isTeamMarkdown = collection === 'teams' && field.key === 'description';
+            const markdownText = getMarkdownValue(mode);
+            const galleryUrls = isTeamMarkdown ? extractGalleryUrls(markdownText) : [];
+
             return (
               <label key={`${mode}-${field.key}`} className="span-2">
                 {field.label}
+                {isTeamMarkdown ? (
+                  <div className="markdown-tools">
+                    <div className="toolbar-row">
+                      <button type="button" onClick={() => applyMarkdownSnippet(mode, '# Başlık')}>H1</button>
+                      <button type="button" onClick={() => applyMarkdownSnippet(mode, '## Alt Başlık')}>H2</button>
+                      <button type="button" onClick={() => applyMarkdownSnippet(mode, '**Kalın metin**')}>Kalın</button>
+                      <button type="button" onClick={() => applyMarkdownSnippet(mode, '- Madde 1\n- Madde 2')}>Liste</button>
+                      <button type="button" onClick={() => applyMarkdownSnippet(mode, '> Vurgulu alıntı')}>Alıntı</button>
+                      <button type="button" onClick={() => applyMarkdownSnippet(mode, '[Bağlantı Metni](https://example.com)')}>Link</button>
+                    </div>
+
+                    <div className="gallery-manager">
+                      <strong>Galeri Görselleri</strong>
+                      <p className="muted">URL ekleyin, sırayı yukarı/aşağı değiştirin. Mobilde bu sırayla gösterilir.</p>
+                      <div className="actions">
+                        <input
+                          value={galleryInput[mode] ?? ''}
+                          onChange={(e) => updateGalleryInput(mode, e.target.value)}
+                          placeholder="https://.../gorsel.jpg"
+                        />
+                        <button type="button" onClick={() => addGalleryImage(mode)}>
+                          Görsel Ekle
+                        </button>
+                      </div>
+
+                      {galleryUrls.length > 0 ? (
+                        <div className="gallery-list">
+                          {galleryUrls.map((url, idx) => (
+                            <div key={`${mode}-gallery-${url}-${idx}`} className="gallery-item">
+                              <span className="order-badge">#{idx + 1}</span>
+                              <small>{url}</small>
+                              <div className="mini-actions">
+                                <button type="button" onClick={() => moveGalleryImage(mode, idx, -1)}>
+                                  Yukarı
+                                </button>
+                                <button type="button" onClick={() => moveGalleryImage(mode, idx, 1)}>
+                                  Aşağı
+                                </button>
+                                <button type="button" onClick={() => removeGalleryImage(mode, idx)}>
+                                  Sil
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="muted">Henüz galeri görseli eklenmedi.</p>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
                 <textarea
                   rows={4}
                   value={value ?? ''}
