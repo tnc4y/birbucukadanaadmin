@@ -164,9 +164,56 @@ export function CollectionEditor({ collection }) {
   const [uploadFiles, setUploadFiles] = useState({});
   const [uploadingField, setUploadingField] = useState('');
 
-  const fields = SCHEMA[collection] ?? [];
   const orderKey = ORDER_FIELD[collection] ?? null;
   const supportsManualId = collection !== 'announcements';
+
+  const filteredItems = useMemo(
+    () =>
+      items.filter((item) => {
+        const haystack = `${item.id} ${item.data.name ?? ''} ${item.data.title ?? ''}`.toLowerCase();
+        return haystack.includes(search.toLowerCase());
+      }),
+    [items, search]
+  );
+
+  const orderingReport = useMemo(() => {
+    if (!orderKey) return null;
+
+    const sorted = sortForCollection(items);
+    const rows = sorted.map((item, index) => {
+      const current = Number(item?.data?.[orderKey]);
+      const expected = index + 1;
+      const hasValue = Number.isFinite(current);
+      return {
+        id: item.id,
+        label: summarize(item),
+        current,
+        expected,
+        isOk: hasValue && current === expected,
+      };
+    });
+
+    const counts = new Map();
+    rows.forEach((row) => {
+      if (!Number.isFinite(row.current)) return;
+      counts.set(row.current, (counts.get(row.current) ?? 0) + 1);
+    });
+
+    const duplicateValues = [...counts.entries()]
+      .filter(([, count]) => count > 1)
+      .map(([value]) => value)
+      .sort((a, b) => a - b);
+
+    const issues = rows.filter((row) => !row.isOk).length;
+
+    return {
+      rows,
+      issues,
+      duplicateValues,
+    };
+  }, [items, orderKey]);
+
+  const fields = SCHEMA[collection] ?? [];
 
   function actorInfo() {
     const user = auth.currentUser;
@@ -293,7 +340,12 @@ export function CollectionEditor({ collection }) {
       actor: actorInfo(),
       beforeData: existing,
     });
-    setStatus('Kaydedildi.');
+    if (orderKey) {
+      await normalizeOrdering({ silent: true });
+      setStatus('Kaydedildi. Sıralama da otomatik kontrol edildi.');
+    } else {
+      setStatus('Kaydedildi.');
+    }
     await refresh();
   }
 
@@ -309,12 +361,18 @@ export function CollectionEditor({ collection }) {
       beforeData: null,
     });
     setSelectedId(id);
-    setStatus('Yeni kayıt oluşturuldu.');
+    if (orderKey) {
+      await normalizeOrdering({ silent: true });
+      setStatus('Yeni kayıt oluşturuldu. Sıralama da otomatik kontrol edildi.');
+    } else {
+      setStatus('Yeni kayıt oluşturuldu.');
+    }
     setNewId('');
     await refresh();
   }
 
-  async function normalizeOrdering() {
+  async function normalizeOrdering(options = {}) {
+    const { silent = false } = options;
     if (!orderKey) return;
     const ordered = sortForCollection(items);
     let changed = 0;
@@ -337,11 +395,13 @@ export function CollectionEditor({ collection }) {
       changed += 1;
     }
 
-    setStatus(
-      changed > 0
-        ? `Sıralama düzeltildi. ${changed} kayıt güncellendi.`
-        : 'Sıralama zaten düzenli.'
-    );
+    if (!silent) {
+      setStatus(
+        changed > 0
+          ? `Sıralama düzeltildi. ${changed} kayıt güncellendi.`
+          : 'Sıralama zaten düzenli.'
+      );
+    }
     await refresh();
   }
 
@@ -352,7 +412,12 @@ export function CollectionEditor({ collection }) {
       actor: actorInfo(),
       beforeData: existing,
     });
-    setStatus('Silindi.');
+    if (orderKey) {
+      await normalizeOrdering({ silent: true });
+      setStatus('Silindi. Sıralama otomatik güncellendi.');
+    } else {
+      setStatus('Silindi.');
+    }
     setSelectedId('');
     setForm({});
     await refresh();
@@ -369,15 +434,6 @@ export function CollectionEditor({ collection }) {
     setForm(defaultForm);
     setStatus('Yeni kayıt için alanları doldurun.');
   }
-
-  const filteredItems = useMemo(
-    () =>
-      items.filter((item) => {
-        const haystack = `${item.id} ${item.data.name ?? ''} ${item.data.title ?? ''}`.toLowerCase();
-        return haystack.includes(search.toLowerCase());
-      }),
-    [items, search]
-  );
 
   return (
     <section className="panel">
@@ -430,8 +486,38 @@ export function CollectionEditor({ collection }) {
               <p className="muted">Duyurularda ID otomatik üretilir, manuel giriş gerekmez.</p>
             )}
             <button onClick={createNew}>Kaydı Oluştur</button>
-            {orderKey ? <button onClick={normalizeOrdering}>Sıralamayı Otomatik Düzelt</button> : null}
+            {orderKey ? <button onClick={() => normalizeOrdering()}>Sıralamayı Otomatik Düzelt</button> : null}
           </div>
+          {orderKey && orderingReport ? (
+            <section className="card">
+              <h3>Sıralama Kontrolü</h3>
+              <p className="muted">
+                Bu içerik grubunda sıra alanı: <strong>{orderKey}</strong>
+              </p>
+              {orderingReport.issues > 0 ? (
+                <p className="error">
+                  {orderingReport.issues} kayıt sıralama açısından sorunlu görünüyor.
+                </p>
+              ) : (
+                <p className="ok">Sıralama düzenli.</p>
+              )}
+              {orderingReport.duplicateValues.length > 0 ? (
+                <p className="error">
+                  Çakışan sıra değerleri: {orderingReport.duplicateValues.join(', ')}
+                </p>
+              ) : null}
+              <div className="list">
+                {orderingReport.rows.map((row) => (
+                  <div key={row.id}>
+                    <strong>{row.label}</strong>
+                    <small>
+                      ID: {row.id} | Mevcut sıra: {Number.isFinite(row.current) ? row.current : '-'} | Olması gereken: {row.expected}
+                    </small>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
           <div className="form-grid">
             {fields.map((field) => {
               const value = form[field.key];

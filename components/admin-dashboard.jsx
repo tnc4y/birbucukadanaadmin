@@ -6,10 +6,18 @@ import { COLLECTIONS, COLLECTION_LABELS } from '@/lib/collections';
 import { AdminHomeOverview } from './admin-home-overview';
 import { AuditLogPanel } from './audit-log-panel';
 import { CollectionEditor } from './collection-editor';
+import { PrivacyPolicyEditor } from './privacy-policy-editor';
 import { SettingsEditor } from './settings-editor';
 
 export function AdminDashboard() {
   const [activeView, setActiveView] = useState('home');
+
+  const mainMenu = [
+    { key: 'home', label: 'Genel Bakış' },
+    { key: 'settings', label: 'Uygulama Ayarları' },
+    { key: 'privacy', label: 'Gizlilik Politikası' },
+    { key: 'logs', label: 'İşlem Kayıtları' },
+  ];
 
   function renderContent() {
     if (activeView === 'home') {
@@ -24,6 +32,10 @@ export function AdminDashboard() {
       return <AuditLogPanel />;
     }
 
+    if (activeView === 'privacy') {
+      return <PrivacyPolicyEditor />;
+    }
+
     if (activeView.startsWith('collection:')) {
       const collection = activeView.replace('collection:', '');
       return <CollectionEditor collection={collection} />;
@@ -35,37 +47,27 @@ export function AdminDashboard() {
   return (
     <main className="dashboard dashboard-shell">
       <section className="hero card">
-        <h2>1.5 Adana Yönetim Paneli</h2>
+        <h2>Yönetim Paneli</h2>
         <p className="muted">
-          Teknik bilgi gerektirmeden kayıt ekleyebilir, düzenleyebilir ve silebilirsiniz.
-          Sol menüden bölüm seçerek içerikleri ve ayarları yönetebilirsiniz.
+          İçerikleri, uygulama ayarlarını ve gizlilik politikasını tek yerden kolayca yönetin.
         </p>
       </section>
 
       <aside className="card side-menu">
-        <h3>Menü</h3>
+        <h3>Yönetim</h3>
         <div className="menu-list">
-          <button
-            className={activeView === 'home' ? 'selected' : ''}
-            onClick={() => setActiveView('home')}
-          >
-            Ana Sayfa / İstatistikler
-          </button>
-          <button
-            className={activeView === 'settings' ? 'selected' : ''}
-            onClick={() => setActiveView('settings')}
-          >
-            Genel Ayarlar
-          </button>
-          <button
-            className={activeView === 'logs' ? 'selected' : ''}
-            onClick={() => setActiveView('logs')}
-          >
-            İşlem Logları
-          </button>
+          {mainMenu.map((item) => (
+            <button
+              key={item.key}
+              className={activeView === item.key ? 'selected' : ''}
+              onClick={() => setActiveView(item.key)}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
 
-        <h3>İçerik Yönetimi</h3>
+        <h3>İçerikler</h3>
         <div className="menu-list">
           {COLLECTIONS.map((key) => {
             const viewKey = `collection:${key}`;

@@ -52,7 +52,7 @@ export function AuthGate({ children }) {
       <div className="auth-wrap">
         <form onSubmit={onSubmit} className="card">
           <h1>Admin Giriş</h1>
-          <p>Firebase Auth ile giriş yapın.</p>
+          <p>Yönetici hesabınızla giriş yapın.</p>
           <label>
             E-posta
             <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
@@ -79,7 +79,7 @@ export function AuthGate({ children }) {
   return (
     <>
       <div className="topbar">
-        <div>{user?.email}</div>
+        <div>Giriş yapan: {user?.email}</div>
         <div className="topbar-actions">
           <a className="text-link" href="/privacy-policy" target="_blank" rel="noreferrer">
             Mobil Uygulama Gizlilik Politikası

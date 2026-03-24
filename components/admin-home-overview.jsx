@@ -110,7 +110,7 @@ export function AdminHomeOverview() {
       </div>
 
       <section className="card">
-        <h3>Koleksiyon Dağılımı</h3>
+        <h3>İçerik Dağılımı</h3>
         <div className="stats-grid compact">
           {COLLECTIONS.map((name) => (
             <div key={name} className="stat-mini">
