@@ -28,6 +28,7 @@ const SCHEMA = {
     { key: 'description', label: 'Detay Yazısı (Markdown)', type: 'textarea' },
     { key: 'bannerUrl', label: 'Banner URL' },
     { key: 'homeOrder', label: 'Anasayfa Sırası', type: 'number' },
+    { key: 'actionLinksText', label: 'Özel Buton Linkleri', type: 'actionLinks' },
     { key: 'socialLinksText', label: 'Sosyal Linkler', type: 'socialLinks' },
     { key: 'visible', label: 'Aktif', type: 'boolean' },
   ],
@@ -121,10 +122,38 @@ function textToSocialLinks(text) {
     });
 }
 
+function actionLinksToText(links) {
+  if (!Array.isArray(links) || links.length === 0) return '';
+  return links
+    .map(
+      (item) =>
+        `${item.label ?? ''}|${item.url ?? ''}|${item.variant ?? 'primary'}|${item.visible ?? true}`
+    )
+    .join('\n');
+}
+
+function textToActionLinks(text) {
+  if (!text.trim()) return [];
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [label = '', url = '', variant = 'primary', visible = 'true'] = line.split('|');
+      return {
+        label: label.trim(),
+        url: url.trim(),
+        variant: (variant.trim() || 'primary').toLowerCase(),
+        visible: visible.trim().toLowerCase() !== 'false',
+      };
+    });
+}
+
 function toForm(collection, data = {}) {
   const out = { ...data };
   if (collection === 'teams') {
     out.socialLinksText = socialLinksToText(data.socialLinks);
+    out.actionLinksText = actionLinksToText(data.actionLinks);
   }
   return out;
 }
@@ -134,7 +163,9 @@ function fromForm(collection, form) {
 
   if (collection === 'teams') {
     out.socialLinks = textToSocialLinks(form.socialLinksText ?? '');
+    out.actionLinks = textToActionLinks(form.actionLinksText ?? '');
     delete out.socialLinksText;
+    delete out.actionLinksText;
   }
 
   if (typeof out.order === 'string' && out.order.trim() !== '') out.order = Number(out.order);
@@ -666,6 +697,20 @@ export function CollectionEditor({ collection }) {
                   value={value ?? ''}
                   onChange={(e) => updateFn(field.key, e.target.value)}
                   placeholder="Instagram|https://instagram.com/...|true"
+                />
+              </label>
+            );
+          }
+
+          if (field.type === 'actionLinks') {
+            return (
+              <label key={`${mode}-${field.key}`} className="span-2">
+                Özel Buton Linkleri (Her satır: ButonYazısı|URL|primary/secondary/tonal|true/false)
+                <textarea
+                  rows={4}
+                  value={value ?? ''}
+                  onChange={(e) => updateFn(field.key, e.target.value)}
+                  placeholder="Takıma Katıl|https://...|primary|true"
                 />
               </label>
             );

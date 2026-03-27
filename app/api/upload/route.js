@@ -51,8 +51,22 @@ export async function POST(request) {
       );
     }
 
+    const rawUrl = (result?.url || '').toString().trim();
+    const secureUrl = rawUrl.startsWith('http://')
+      ? rawUrl.replace('http://', 'https://')
+      : rawUrl;
+
+    if (!secureUrl) {
+      return Response.json(
+        {
+          error: 'Yuklenen dosya URL bilgisi donmedi.',
+        },
+        { status: 400 }
+      );
+    }
+
     return Response.json({
-      secureUrl: result.url,
+      secureUrl,
       publicId: result.fileId,
       format: result.format,
     });
