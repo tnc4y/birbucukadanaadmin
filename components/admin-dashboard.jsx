@@ -15,7 +15,7 @@ export function AdminDashboard() {
   const mainMenu = [
     { key: 'home', label: 'Genel Bakış' },
     { key: 'settings', label: 'Uygulama Ayarları' },
-    { key: 'privacy', label: 'Gizlilik Politikası', href: '/privacy-policy' },
+    { key: 'privacy', label: 'Gizlilik Politikası' },
     { key: 'logs', label: 'İşlem Kayıtları' },
   ];
 
@@ -44,25 +44,33 @@ export function AdminDashboard() {
     return <AdminHomeOverview />;
   }
 
+  function activeTitle() {
+    const menuHit = mainMenu.find((item) => item.key === activeView);
+    if (menuHit) return menuHit.label;
+
+    if (activeView.startsWith('collection:')) {
+      const collection = activeView.replace('collection:', '');
+      return COLLECTION_LABELS[collection] || 'İçerik';
+    }
+
+    return 'Genel Bakış';
+  }
+
+  const activeSectionType = activeView.startsWith('collection:') ? 'İçerik Editörü' : 'Yönetim';
+
   return (
     <main className="dashboard dashboard-shell">
       <aside className="card side-menu">
         <h3>Yönetim</h3>
         <div className="menu-list">
           {mainMenu.map((item) => (
-            <div key={item.key} className="menu-item-row">
-              <button
-                className={activeView === item.key ? 'selected' : ''}
-                onClick={() => setActiveView(item.key)}
-              >
-                {item.label}
-              </button>
-              {item.href ? (
-                <a className="menu-inline-link" href={item.href} target="_blank" rel="noreferrer" aria-label="Gizlilik politikasını aç">
-                  Ac
-                </a>
-              ) : null}
-            </div>
+            <button
+              key={item.key}
+              className={activeView === item.key ? 'selected' : ''}
+              onClick={() => setActiveView(item.key)}
+            >
+              {item.label}
+            </button>
           ))}
         </div>
 
@@ -83,7 +91,13 @@ export function AdminDashboard() {
         </div>
       </aside>
 
-      <section className="content-area">{renderContent()}</section>
+      <section className="content-area">
+        <div className="content-head card">
+          <h2>{activeTitle()}</h2>
+          <span className="content-pill">{activeSectionType}</span>
+        </div>
+        <div className="content-scroll">{renderContent()}</div>
+      </section>
     </main>
   );
 }

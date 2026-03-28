@@ -75,9 +75,8 @@ export function AuthGate({ children }) {
   return (
     <>
       <div className="topbar">
-        <div />
+        <span className="topbar-title">1.5Adana Mobil Uygulama Yönetim Paneli</span>
         <div className="topbar-right">
-          <span className="topbar-title">1.5Adana Mobil Uygulama Yönetim Paneli</span>
           <span className="topbar-profile">{user?.email}</span>
           <button onClick={() => signOut(auth)}>Çıkış</button>
         </div>
