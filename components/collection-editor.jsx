@@ -843,7 +843,7 @@ export function CollectionEditor({ collection }) {
   }
 
   return (
-    <section className="panel">
+    <section className="panel panel-collection">
       <h2>{COLLECTION_LABELS[collection]}</h2>
 
       <div className="segmented">
@@ -863,7 +863,8 @@ export function CollectionEditor({ collection }) {
       </div>
 
       {view === 'records' ? (
-        <div className="layout-2">
+        <div className="tab-content">
+          <div className="layout-2">
           <aside className="card">
             <h3>Mevcut Kayıtlar</h3>
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Kayıt ara..." />
@@ -901,71 +902,76 @@ export function CollectionEditor({ collection }) {
               <p className="muted">Soldan bir kayıt seçtiğinizde düzenleme formu açılır.</p>
             )}
           </div>
+          </div>
         </div>
       ) : null}
 
       {view === 'new' && supportsCreate ? (
-        <div className="card">
-          <h3>Yeni Kayıt Oluştur</h3>
+        <div className="tab-content">
+          <div className="card">
+            <h3>Yeni Kayıt Oluştur</h3>
 
-          {renderFields('new', newForm, updateNewField)}
+            {renderFields('new', newForm, updateNewField)}
 
-          <div className="actions">
-            <button onClick={createNew}>Kaydı Oluştur</button>
-            <button
-              onClick={() => {
-                setNewForm(prepareNewForm(items));
-              }}
-            >
-              Formu Temizle
-            </button>
+            <div className="actions">
+              <button onClick={createNew}>Kaydı Oluştur</button>
+              <button
+                onClick={() => {
+                  setNewForm(prepareNewForm(items));
+                }}
+              >
+                Formu Temizle
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
 
       {view === 'order' && orderKey ? (
-        <div className="card">
-          <h3>Sıralama Ayarları</h3>
-          <p className="muted">
-            Kayıtları sürükleyip bırakarak sıralayın. Mobilde ok butonlarını kullanabilirsiniz.
-          </p>
-          {orderIssueCount > 0 ? (
-            <p className="error">Mevcut sırada {orderIssueCount} kayıt beklenen sırada değil.</p>
-          ) : (
-            <p className="ok">Sıralama düzenli görünüyor.</p>
-          )}
+        <div className="tab-content">
+          <div className="card">
+            <h3>Sıralama Ayarları</h3>
+            <p className="muted">
+              Kayıtları sürükleyip bırakarak sıralayın. Mobilde ok butonlarını kullanabilirsiniz.
+            </p>
+            {orderIssueCount > 0 ? (
+              <p className="error">Mevcut sırada {orderIssueCount} kayıt beklenen sırada değil.</p>
+            ) : (
+              <p className="ok">Sıralama düzenli görünüyor.</p>
+            )}
 
-          <div className="dnd-list">
-            {orderedDraftItems.map((item, index) => (
-              <div
-                key={item.id}
-                className={`dnd-item ${draggingId === item.id ? 'dragging' : ''}`}
-                draggable
-                onDragStart={() => onDragStart(item.id)}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => onDropTo(item.id)}
-                onDragEnd={() => setDraggingId('')}
-              >
-                <span className="drag-handle">⋮⋮</span>
-                <div className="dnd-main">
-                  <strong>{summarize(item)}</strong>
+            <div className="dnd-list">
+              {orderedDraftItems.map((item, index) => (
+                <div
+                  key={item.id}
+                  className={`dnd-item ${draggingId === item.id ? 'dragging' : ''}`}
+                  draggable
+                  onDragStart={() => onDragStart(item.id)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => onDropTo(item.id)}
+                  onDragEnd={() => setDraggingId('')}
+                >
+                  <span className="drag-handle">⋮⋮</span>
+                  <div className="dnd-main">
+                    <strong>{summarize(item)}</strong>
+                  </div>
+                  <span className="order-badge">#{index + 1}</span>
+                  <div className="mini-actions">
+                    <button type="button" onClick={() => moveUp(item.id)}>
+                      Yukarı
+                    </button>
+                    <button type="button" onClick={() => moveDown(item.id)}>
+                      Aşağı
+                    </button>
+                  </div>
                 </div>
-                <span className="order-badge">#{index + 1}</span>
-                <div className="mini-actions">
-                  <button type="button" onClick={() => moveUp(item.id)}>
-                    Yukarı
-                  </button>
-                  <button type="button" onClick={() => moveDown(item.id)}>
-                    Aşağı
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div className="actions">
-            <button onClick={saveOrder}>Sıralamayı Kaydet</button>
-            <button onClick={() => setOrderDraft(sortForCollection(items).map((item) => item.id))}>Sıfırla</button>
+            <div className="actions">
+              <button onClick={saveOrder}>Sıralamayı Kaydet</button>
+              <button onClick={() => setOrderDraft(sortForCollection(items).map((item) => item.id))}>Sıfırla</button>
+            </div>
           </div>
         </div>
       ) : null}
