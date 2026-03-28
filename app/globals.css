@@ -210,35 +210,6 @@ button:disabled {
   min-height: calc(100vh - 110px);
 }
 
-.content-head {
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  position: sticky;
-  top: 74px;
-  z-index: 20;
-}
-
-.content-head h2 {
-  font-size: 22px;
-  font-weight: 800;
-}
-
-.content-pill {
-  background: #edf4ff;
-  color: var(--primary-strong);
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.content-scroll {
-  display: grid;
-  gap: 14px;
-}
-
 .panel {
   display: grid;
   gap: 10px;
@@ -595,11 +566,6 @@ button:disabled {
   .topbar-right {
     margin-left: 0;
     flex-wrap: wrap;
-  }
-
-  .content-head {
-    position: static;
-    grid-template-columns: 1fr;
   }
 
   .dnd-item {

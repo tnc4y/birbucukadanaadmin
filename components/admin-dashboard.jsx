@@ -44,20 +44,6 @@ export function AdminDashboard() {
     return <AdminHomeOverview />;
   }
 
-  function activeTitle() {
-    const menuHit = mainMenu.find((item) => item.key === activeView);
-    if (menuHit) return menuHit.label;
-
-    if (activeView.startsWith('collection:')) {
-      const collection = activeView.replace('collection:', '');
-      return COLLECTION_LABELS[collection] || 'İçerik';
-    }
-
-    return 'Genel Bakış';
-  }
-
-  const activeSectionType = activeView.startsWith('collection:') ? 'İçerik Editörü' : 'Yönetim';
-
   return (
     <main className="dashboard dashboard-shell">
       <aside className="card side-menu">
@@ -91,13 +77,7 @@ export function AdminDashboard() {
         </div>
       </aside>
 
-      <section className="content-area">
-        <div className="content-head card">
-          <h2>{activeTitle()}</h2>
-          <span className="content-pill">{activeSectionType}</span>
-        </div>
-        <div className="content-scroll">{renderContent()}</div>
-      </section>
+      <section className="content-area">{renderContent()}</section>
     </main>
   );
 }

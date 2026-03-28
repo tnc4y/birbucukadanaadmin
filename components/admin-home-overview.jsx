@@ -428,12 +428,6 @@ export function AdminHomeOverview() {
     <section className="panel">
       <div className="actions">
         <h2>Ana Sayfa</h2>
-        <button type="button" onClick={seedDemoData} disabled={seeding}>
-          {seeding ? 'Demo Veriler Yükleniyor...' : 'Demo Veri Yükle'}
-        </button>
-        <button type="button" onClick={refresh}>
-          İstatistikleri Yenile
-        </button>
       </div>
 
       {loading ? <p className="muted">İstatistikler yükleniyor...</p> : null}
