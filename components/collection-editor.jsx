@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import MDEditor from '@uiw/react-md-editor';
+import { deleteField } from 'firebase/firestore';
 
 import { COLLECTION_LABELS } from '@/lib/collections';
 import { auth } from '@/lib/firebase';
@@ -18,7 +19,6 @@ const SCHEMA = {
     { key: 'buttonUrl', label: 'Buton Linki' },
     { key: 'popupDismissKey', label: 'Popup Anahtarı' },
     { key: 'visible', label: 'Aktif', type: 'boolean' },
-    { key: 'isImportant', label: 'Önemli Duyuru', type: 'boolean' },
     { key: 'showAsPopup', label: 'Açılışta Popup Göster', type: 'boolean' },
   ],
   teams: [
@@ -175,6 +175,11 @@ function fromForm(collection, form) {
   if (typeof out.date === 'string' && out.date.trim() === '') delete out.date;
   if (typeof out.teamId === 'string' && out.teamId.trim() === '') delete out.teamId;
 
+  if (collection === 'announcements') {
+    // Keep backward compatibility by removing deprecated field from stored docs.
+    out.isImportant = deleteField();
+  }
+
   return out;
 }
 
@@ -255,7 +260,6 @@ export function CollectionEditor({ collection }) {
   const [selectedId, setSelectedId] = useState('');
   const [editForm, setEditForm] = useState({});
   const [newForm, setNewForm] = useState({ visible: true });
-  const [newId, setNewId] = useState('');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [uploadFiles, setUploadFiles] = useState({});
@@ -268,7 +272,6 @@ export function CollectionEditor({ collection }) {
   const orderKey = ORDER_FIELD[collection] ?? null;
   const readOnlyCollection = collection === 'event_participations';
   const supportsCreate = !readOnlyCollection;
-  const supportsManualId = supportsCreate && collection !== 'announcements';
 
   function actorInfo() {
     const user = auth.currentUser;
@@ -408,7 +411,6 @@ export function CollectionEditor({ collection }) {
     setSelectedId('');
     setEditForm({});
     setNewForm({ visible: true });
-    setNewId('');
     setSearch('');
     setStatus('');
     setUploadFiles({});
@@ -492,12 +494,39 @@ export function CollectionEditor({ collection }) {
     if (!selectedId || readOnlyCollection) return;
 
     const existing = items.find((item) => item.id === selectedId)?.data ?? null;
-    await upsertCollectionDoc(collection, selectedId, fromForm(collection, editForm), {
+    const payload = fromForm(collection, editForm);
+
+    await upsertCollectionDoc(collection, selectedId, payload, {
       actor: actorInfo(),
       beforeData: existing,
     });
 
-    setStatus('Kayıt güncellendi.');
+    let updatedPopupCount = 0;
+    if (collection === 'announcements' && payload.showAsPopup === true) {
+      const popupDocsToDisable = items.filter(
+        (item) => item.id !== selectedId && item?.data?.showAsPopup === true
+      );
+
+      for (const item of popupDocsToDisable) {
+        await upsertCollectionDoc(
+          collection,
+          item.id,
+          { ...item.data, showAsPopup: false, isImportant: deleteField() },
+          {
+            actor: actorInfo(),
+            beforeData: item.data,
+          }
+        );
+      }
+
+      updatedPopupCount = popupDocsToDisable.length;
+    }
+
+    setStatus(
+      updatedPopupCount > 0
+        ? `Kayıt güncellendi. ${updatedPopupCount} duyuruda popup kapatıldı.`
+        : 'Kayıt güncellendi.'
+    );
     await refresh();
   }
 
@@ -509,12 +538,7 @@ export function CollectionEditor({ collection }) {
   async function createNew() {
     if (!supportsCreate) return;
 
-    if (supportsManualId && !newId.trim()) {
-      setStatus('Yeni kayıt ID boş olamaz.');
-      return;
-    }
-
-    const id = supportsManualId ? newId.trim() : createDocIdFromForm();
+    const id = createDocIdFromForm();
     const payload = fromForm(collection, newForm);
 
     await upsertCollectionDoc(collection, id, payload, {
@@ -522,8 +546,30 @@ export function CollectionEditor({ collection }) {
       beforeData: null,
     });
 
-    setStatus('Yeni kayıt oluşturuldu.');
-    setNewId('');
+    let updatedPopupCount = 0;
+    if (collection === 'announcements' && payload.showAsPopup === true) {
+      const popupDocsToDisable = items.filter((item) => item?.data?.showAsPopup === true);
+
+      for (const item of popupDocsToDisable) {
+        await upsertCollectionDoc(
+          collection,
+          item.id,
+          { ...item.data, showAsPopup: false, isImportant: deleteField() },
+          {
+            actor: actorInfo(),
+            beforeData: item.data,
+          }
+        );
+      }
+
+      updatedPopupCount = popupDocsToDisable.length;
+    }
+
+    setStatus(
+      updatedPopupCount > 0
+        ? `Yeni kayıt oluşturuldu. ${updatedPopupCount} duyuruda popup kapatıldı.`
+        : 'Yeni kayıt oluşturuldu.'
+    );
     setView('records');
     await refresh();
     pick(id);
@@ -830,7 +876,6 @@ export function CollectionEditor({ collection }) {
                   onClick={() => pick(item.id)}
                 >
                   <strong>{summarize(item)}</strong>
-                  <small>{item.id}</small>
                   {orderKey ? (
                     <small>
                       Sıra: {Number.isFinite(Number(item?.data?.[orderKey])) ? Number(item?.data?.[orderKey]) : '-'}
@@ -865,18 +910,7 @@ export function CollectionEditor({ collection }) {
           <h3>Yeni Kayıt Oluştur</h3>
           <p className="muted">Tek işlemle kayıt oluşturulur. Oluşturduktan sonra kayıtlar sekmesinden güncelleyebilirsiniz.</p>
 
-          {supportsManualId ? (
-            <div className="actions">
-              <input
-                value={newId}
-                onChange={(e) => setNewId(e.target.value)}
-                placeholder="dokuman-id"
-              />
-              <button onClick={() => setNewId(slugify(newForm.name || newForm.title || ''))}>ID Otomatik Üret</button>
-            </div>
-          ) : (
-            <p className="muted">Bu içerik türünde ID otomatik üretilir.</p>
-          )}
+          <p className="muted">Kayıt kimliği sistem tarafından otomatik oluşturulur.</p>
 
           {renderFields('new', newForm, updateNewField)}
 
@@ -885,7 +919,6 @@ export function CollectionEditor({ collection }) {
             <button
               onClick={() => {
                 setNewForm(prepareNewForm(items));
-                setNewId('');
               }}
             >
               Formu Temizle
@@ -920,7 +953,6 @@ export function CollectionEditor({ collection }) {
                 <span className="drag-handle">⋮⋮</span>
                 <div className="dnd-main">
                   <strong>{summarize(item)}</strong>
-                  <small>{item.id}</small>
                 </div>
                 <span className="order-badge">#{index + 1}</span>
                 <div className="mini-actions">

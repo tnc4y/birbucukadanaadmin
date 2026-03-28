@@ -16,7 +16,7 @@ function describe(item) {
     delete: 'SİLDİ',
   };
   const action = actionMap[item?.action] ?? item?.action ?? 'İŞLEM';
-  return `${action} / ${item?.collectionName ?? '-'} / ${item?.docId ?? '-'}`;
+  return `${action} / ${item?.collectionName ?? '-'}`;
 }
 
 export function AuditLogPanel() {

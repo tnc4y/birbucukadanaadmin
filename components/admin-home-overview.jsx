@@ -54,6 +54,49 @@ export function AdminHomeOverview() {
         visibleDocs += rows.filter((item) => item?.data?.visible !== false).length;
       });
 
+      const announcementsIndex = COLLECTIONS.indexOf('announcements');
+      const announcementRows = announcementsIndex >= 0 ? collectionResults[announcementsIndex] ?? [] : [];
+      const announcementTitleMap = new Map(
+        announcementRows.map((row) => [row.id, row?.data?.title || 'Başlıksız Duyuru'])
+      );
+
+      const teamsIndex = COLLECTIONS.indexOf('teams');
+      const teamRows = teamsIndex >= 0 ? collectionResults[teamsIndex] ?? [] : [];
+      const teamNameMap = new Map(teamRows.map((row) => [row.id, row?.data?.name || 'Adsız Takım']));
+
+      const awardsIndex = COLLECTIONS.indexOf('awards');
+      const awardRows = awardsIndex >= 0 ? collectionResults[awardsIndex] ?? [] : [];
+      const awardTitleMap = new Map(awardRows.map((row) => [row.id, row?.data?.title || 'Başlıksız Ödül']));
+
+      const projectsIndex = COLLECTIONS.indexOf('projects');
+      const projectRows = projectsIndex >= 0 ? collectionResults[projectsIndex] ?? [] : [];
+      const projectTitleMap = new Map(
+        projectRows.map((row) => [row.id, row?.data?.title || 'Başlıksız Proje'])
+      );
+
+      const topAnnouncements = (analytics?.topAnnouncements || []).map((announcement) => ({
+        ...announcement,
+        displayTitle:
+          announcementTitleMap.get(announcement.announcementId) ||
+          announcement.title ||
+          'Başlıksız Duyuru',
+      }));
+
+      const topTeams = (analytics?.topTeams || []).map((team) => ({
+        ...team,
+        displayTitle: teamNameMap.get(team.teamId) || team.name || 'Adsız Takım',
+      }));
+
+      const topAwards = (analytics?.topAwards || []).map((award) => ({
+        ...award,
+        displayTitle: awardTitleMap.get(award.awardId) || award.title || 'Başlıksız Ödül',
+      }));
+
+      const topProjects = (analytics?.topProjects || []).map((project) => ({
+        ...project,
+        displayTitle: projectTitleMap.get(project.projectId) || project.title || 'Başlıksız Proje',
+      }));
+
       setStats({
         collectionCounts,
         totalDocs,
@@ -62,10 +105,10 @@ export function AdminHomeOverview() {
         auditCount: logs.length,
         lastAudit: logs[0]?.data ?? null,
         onlineUsers: analytics?.onlineUsers || 0,
-        topTeams: analytics?.topTeams || [],
-        topAnnouncements: analytics?.topAnnouncements || [],
-        topAwards: analytics?.topAwards || [],
-        topProjects: analytics?.topProjects || [],
+        topTeams,
+        topAnnouncements,
+        topAwards,
+        topProjects,
         totalViews: analytics?.totalViews || {},
       });
     } catch (err) {
@@ -168,7 +211,6 @@ export function AdminHomeOverview() {
             visible: true,
             buttonText: 'Takvimi İncele',
             buttonUrl: 'https://15adana.org/takvim',
-            isImportant: true,
             showAsPopup: true,
             popupDismissKey: 'teknofest-hazirlik-2026',
           },
@@ -185,7 +227,6 @@ export function AdminHomeOverview() {
             visible: true,
             buttonText: 'Kayıt Ol',
             buttonUrl: 'https://15adana.org/atolye',
-            isImportant: false,
             showAsPopup: false,
             popupDismissKey: '',
           },
@@ -202,7 +243,6 @@ export function AdminHomeOverview() {
             visible: true,
             buttonText: 'Detaylar',
             buttonUrl: 'https://15adana.org/demo-day',
-            isImportant: false,
             showAsPopup: false,
             popupDismissKey: '',
           },
@@ -449,7 +489,7 @@ export function AdminHomeOverview() {
           <div className="list">
             {stats.topTeams.map((team) => (
               <div key={team.teamId} className="list-item">
-                <strong>{team.teamId}</strong>
+                <strong>{team.displayTitle}</strong>
                 <span>{team.viewCount} görüntüleme</span>
               </div>
             ))}
@@ -463,7 +503,7 @@ export function AdminHomeOverview() {
           <div className="list">
             {stats.topAnnouncements.map((announcement) => (
               <div key={announcement.announcementId} className="list-item">
-                <strong>{announcement.announcementId}</strong>
+                <strong>{announcement.displayTitle}</strong>
                 <span>{announcement.viewCount} görüntüleme</span>
               </div>
             ))}
@@ -477,7 +517,7 @@ export function AdminHomeOverview() {
           <div className="list">
             {stats.topAwards.map((award) => (
               <div key={award.awardId} className="list-item">
-                <strong>{award.awardId}</strong>
+                <strong>{award.displayTitle}</strong>
                 <span>{award.viewCount} görüntüleme</span>
               </div>
             ))}
@@ -491,7 +531,7 @@ export function AdminHomeOverview() {
           <div className="list">
             {stats.topProjects.map((project) => (
               <div key={project.projectId} className="list-item">
-                <strong>{project.projectId}</strong>
+                <strong>{project.displayTitle}</strong>
                 <span>{project.viewCount} görüntüleme</span>
               </div>
             ))}
@@ -507,8 +547,7 @@ export function AdminHomeOverview() {
               <strong>{stats.lastAudit?.actor?.email || '-'}</strong> | {stats.lastAudit?.action || '-'}
             </p>
             <p className="muted">
-              {stats.lastAudit?.collectionName || '-'} / {stats.lastAudit?.docId || '-'} |{' '}
-              {formatDate(stats.lastAudit?.createdAt)}
+              {stats.lastAudit?.collectionName || '-'} | {formatDate(stats.lastAudit?.createdAt)}
             </p>
           </>
         ) : (
