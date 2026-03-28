@@ -37,6 +37,7 @@ const SCHEMA = {
     { key: 'description', label: 'Açıklama', type: 'textarea' },
     { key: 'tag', label: 'Etiket (Genel / Takım)' },
     { key: 'date', label: 'Tarih (YYYY-MM-DD)', type: 'date' },
+    { key: 'location', label: 'Konum' },
     { key: 'imageUrl', label: 'Görsel URL' },
     { key: 'teamId', label: 'Takım (opsiyonel)', type: 'teamSelect' },
     {
