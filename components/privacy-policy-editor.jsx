@@ -68,9 +68,6 @@ export function PrivacyPolicyEditor() {
   return (
     <section className="panel">
       <h2>Gizlilik Politikası</h2>
-      <p className="muted">
-        Buradaki metinler, yönetim panelindeki ve mobil uygulamadaki gizlilik politikası ekranında gösterilir.
-      </p>
       <div className="card">
         <div className="form-grid">
           <label className="span-2">

@@ -845,7 +845,6 @@ export function CollectionEditor({ collection }) {
   return (
     <section className="panel">
       <h2>{COLLECTION_LABELS[collection]}</h2>
-      <p className="muted">Kayıtları yönetmek, yeni kayıt eklemek ve sıralama yapmak için aşağıdaki sekmeleri kullanın.</p>
 
       <div className="segmented">
         <button className={view === 'records' ? 'selected' : ''} onClick={() => setView('records')}>
@@ -908,9 +907,6 @@ export function CollectionEditor({ collection }) {
       {view === 'new' && supportsCreate ? (
         <div className="card">
           <h3>Yeni Kayıt Oluştur</h3>
-          <p className="muted">Tek işlemle kayıt oluşturulur. Oluşturduktan sonra kayıtlar sekmesinden güncelleyebilirsiniz.</p>
-
-          <p className="muted">Kayıt kimliği sistem tarafından otomatik oluşturulur.</p>
 
           {renderFields('new', newForm, updateNewField)}
 

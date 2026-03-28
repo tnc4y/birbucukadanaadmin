@@ -52,7 +52,6 @@ export function AuthGate({ children }) {
       <div className="auth-wrap">
         <form onSubmit={onSubmit} className="card">
           <h1>Admin Giriş</h1>
-          <p>Yönetici hesabınızla giriş yapın.</p>
           <label>
             E-posta
             <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required />
@@ -68,9 +67,6 @@ export function AuthGate({ children }) {
           </label>
           {error ? <p className="error">{error}</p> : null}
           <button type="submit">Giriş Yap</button>
-          <a className="text-link" href="/privacy-policy" target="_blank" rel="noreferrer">
-            Mobil Uygulama Gizlilik Politikası
-          </a>
         </form>
       </div>
     );
@@ -79,11 +75,10 @@ export function AuthGate({ children }) {
   return (
     <>
       <div className="topbar">
-        <div>Giriş yapan: {user?.email}</div>
-        <div className="topbar-actions">
-          <a className="text-link" href="/privacy-policy" target="_blank" rel="noreferrer">
-            Mobil Uygulama Gizlilik Politikası
-          </a>
+        <div />
+        <div className="topbar-right">
+          <span className="topbar-title">1.5Adana Mobil Uygulama Yönetim Paneli</span>
+          <span className="topbar-profile">{user?.email}</span>
           <button onClick={() => signOut(auth)}>Çıkış</button>
         </div>
       </div>

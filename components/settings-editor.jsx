@@ -136,7 +136,6 @@ export function SettingsEditor() {
     <section className="panel">
       <h2>Genel Ayarlar</h2>
       <div className="card">
-        <p className="muted">Bu alanlar mobil uygulamanın hakkımızda, iletişim ve drawer bölümlerini besler.</p>
         <div className="form-grid">
           <label>
             Uygulama Adı

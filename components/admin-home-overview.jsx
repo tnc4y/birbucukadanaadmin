@@ -435,7 +435,6 @@ export function AdminHomeOverview() {
           İstatistikleri Yenile
         </button>
       </div>
-      <p className="muted">Panelin genel durumunu buradan takip edebilirsiniz.</p>
 
       {loading ? <p className="muted">İstatistikler yükleniyor...</p> : null}
       {error ? <p className="error">{error}</p> : null}
